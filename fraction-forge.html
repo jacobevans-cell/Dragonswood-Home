@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dragonswood • Fraction Forge</title><link rel="icon" type="image/png" href="v33-integration/assets/branding/dragonswood-mascot-crest.png">
+<style>
+:root{
+  --bg:#061126;--panel:#07162c;--panel2:#0a1e38;--line:#1b5871;--text:#f6fbff;
+  --muted:#a9c6d7;--cyan:#12d7ef;--gold:#ffd166;--good:#6ce59a;--bad:#ff718a;
+  --violet:#843cda;--round:#b88756;--round2:#f0d4aa;--rglow:rgba(184,135,86,.25)
+}
+*{box-sizing:border-box}
+body{
+  margin:0;color:var(--text);font-family:Inter,Arial,sans-serif;
+  background:linear-gradient(rgba(3,4,20,.55),rgba(3,5,24,.76)),
+    url("dragonswood-portal-background.png") center/cover fixed no-repeat,#050719;
+}
+button,input{font:inherit}
+button{cursor:pointer}
+.app{width:min(1180px,95%);margin:14px auto 50px}
+.dw-bar{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:11px 15px;border:1px solid rgba(244,201,93,.52);border-radius:12px;background:rgba(7,6,29,.88);backdrop-filter:blur(7px)}
+.dw-mark{font:900 18px Georgia,serif;color:#ffe99c;letter-spacing:.6px}.dw-account{text-align:center;color:#d9cdec;font-size:12px}.dw-account b{color:#fff0a6}.dw-back{color:#fff0a6;text-decoration:none;font-weight:1000;padding:9px 13px;border-radius:8px;border:1px solid #7245bc;background:linear-gradient(90deg,#702bc5,#087ba5)}
+.account-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}
+.account-card,.mission-card,.panel,.control-panel{border:1px solid rgba(109,74,164,.62);border-radius:11px;background:linear-gradient(180deg,rgba(11,10,48,.92),rgba(4,15,37,.92));backdrop-filter:blur(5px)}
+.account-card{padding:10px;text-align:center}.account-card small,.mission-card small{display:block;color:#c8b9de;font-size:9px;font-weight:1000;letter-spacing:.8px}.account-card b{display:block;color:#ffe98a;font-size:17px;margin-top:4px}
+.status{padding:10px 13px;border:1px solid #3a5771;border-radius:10px;background:rgba(6,14,34,.88);font-weight:800;font-size:12px;margin-bottom:10px}.status.good{border-color:#50c982;color:#bdf7d0}.status.warn{border-color:#e2ad47;color:#ffe3a0}.status.error{border-color:#d85972;color:#ffc0cc}
+.round-banner{padding:10px 14px;border:1px solid var(--round);border-radius:10px;background:linear-gradient(90deg,var(--rglow),rgba(5,8,28,.72));color:var(--round2);font-weight:1000;text-align:center;letter-spacing:.5px;margin-bottom:13px}
+body.round-1{--round:#b88756;--round2:#f0d4aa;--rglow:rgba(184,135,86,.25)}
+body.round-2{--round:#59b9e8;--round2:#c8f4ff;--rglow:rgba(65,173,230,.30)}
+body.round-3{--round:#b35cff;--round2:#f3c8ff;--rglow:rgba(179,92,255,.32)}
+body.round-1 .panel,body.round-1 .mission-card,body.round-1 .control-panel{border-color:rgba(190,145,90,.55)}
+body.round-2 .panel,body.round-2 .mission-card,body.round-2 .control-panel{border-color:rgba(80,190,240,.62);box-shadow:0 0 17px rgba(80,190,240,.07)}
+body.round-3 .panel,body.round-3 .mission-card,body.round-3 .control-panel{border-color:rgba(190,100,255,.66);box-shadow:0 0 18px rgba(190,100,255,.09)}
+.hero{text-align:center;padding:10px 0 12px}.hero h1{margin:0;font:1000 clamp(34px,5vw,57px) Georgia,serif;letter-spacing:1px;color:#fff}.hero h1 span{color:#ffe787}.hero p{margin:6px 0;color:#96cfff;font-weight:900;letter-spacing:1px}
+.control-panel{padding:13px;margin-bottom:12px}.control-title{font:900 12px Georgia,serif;color:#ffe695;margin-bottom:9px}
+.operation-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.op-btn,.difficulty-btn,.action-btn{border:1px solid #59409a;border-radius:9px;background:linear-gradient(180deg,#5520a2,#102d50);color:#fff;font-weight:1000;padding:10px}.op-btn.active{border-color:#ffe271;box-shadow:0 0 14px rgba(255,219,91,.2);color:#fff1a9}.op-btn span{display:block;font-size:20px;margin-bottom:3px}
+.difficulty-row{display:flex;gap:8px;align-items:center;margin-top:9px}.difficulty-label{font-size:10px;color:#c7badb;font-weight:1000}.difficulty-toggle{display:flex;border:1px solid #59409a;border-radius:9px;overflow:hidden}.difficulty-btn{border:0;border-radius:0;min-width:95px}.difficulty-btn.active{background:linear-gradient(90deg,#078d9e,#7240d4);color:#fff4a9}.difficulty-note{color:#b9aecb;font-size:10px;line-height:1.3;flex:1}
+.mission-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:12px}.mission-card{padding:11px}.mission-card .label{font-size:9px;color:#acc0d1;font-weight:1000;letter-spacing:.8px;text-transform:uppercase}.mission-card .value{font-size:20px;font-weight:1000;margin-top:5px}.mission-card.xp{border-color:#1ec8ff}.mission-card.score{border-color:#e0ba4b}.mission-card.score .value{color:#ffe47f}.mission-card.round .value{color:var(--round2)}
+.xp-track{height:8px;border:1px solid #245c77;border-radius:99px;background:#05101e;overflow:hidden;margin-top:6px}.xp-fill{height:100%;width:0;background:linear-gradient(90deg,#02aee4,#61efff);transition:.25s}
+.game-layout{display:grid;grid-template-columns:1.35fr .85fr;gap:12px}.panel{padding:14px}
+.panel-title{font:900 14px Georgia,serif;color:#ffe59a;margin-bottom:10px}
+.problem-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.problem-expression{font-size:30px;font-weight:1000}.challenge-tag{padding:6px 9px;border-radius:999px;background:#5f209f;color:#fff0a6;font-size:9px;font-weight:1000}
+.fraction{display:inline-grid;grid-template-rows:auto auto;text-align:center;vertical-align:middle;min-width:42px;margin:0 5px}.fraction .num{border-bottom:2px solid currentColor;padding:0 5px 2px}.fraction .den{padding:2px 5px 0}.mixed{display:inline-flex;align-items:center}.mixed>.whole{font-size:1.1em;font-weight:1000;margin-right:2px}
+.visual-bars{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:13px 0}.bar-box{padding:10px;border:1px solid #254e71;border-radius:9px;background:rgba(4,13,29,.76)}.bar-label{font-size:9px;font-weight:1000;color:#b9cee0;margin-bottom:7px}.fraction-bar{display:grid;height:30px;border:2px solid #d6e7f4;border-radius:5px;overflow:hidden}.piece{border-right:1px solid rgba(255,255,255,.34);background:#124f72}.piece.filled{background:linear-gradient(180deg,#23cce6,#1679a6)}.bar-box:nth-child(2) .piece.filled{background:linear-gradient(180deg,#a764f5,#7136b5)}
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:12px 0}.step-tab{padding:8px;border:1px solid #2d5f78;border-radius:8px;text-align:center;color:#88b8cf;font-size:9px;font-weight:1000}.step-tab.active{border-color:#ffe272;color:#ffe99a;background:rgba(119,67,24,.25)}.step-tab.done{border-color:#4ccf83;color:#aaf0c3}
+.step-work{min-height:250px;padding:14px;border:1px solid #28496c;border-radius:10px;background:rgba(3,11,29,.76)}.step-work h3{margin:0 0 6px;color:#fff0a3}.step-work p{color:#c5d5e2;line-height:1.4}.input-row{display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin-top:12px}.field label{display:block;color:#b8aaca;font-size:9px;font-weight:1000;margin-bottom:4px}.field input{width:90px;padding:10px;border:1px solid #315b75;border-radius:8px;background:#051126;color:#fff;font-weight:900;font-size:18px;text-align:center}.field input.small{width:72px}.action-btn{padding:11px 15px}.action-btn.secondary{background:#142844;border-color:#38617b}.action-btn.hint{background:linear-gradient(90deg,#7b4a13,#643e8d)}.feedback{margin-top:10px;padding:9px 11px;border-radius:8px;font-weight:900;font-size:12px;min-height:37px}.feedback.good{border:1px solid #50c982;color:#bdf7d0;background:rgba(23,91,50,.25)}.feedback.bad{border:1px solid #dc6279;color:#ffc5d0;background:rgba(90,18,37,.25)}
+.coach{position:sticky;top:10px}.coach-title{display:inline-block;background:#7132b4;color:#fff0a1;font-size:9px;font-weight:1000;padding:6px 9px;border-radius:7px}.coach h2{margin:10px 0 5px}.coach p{color:#d2dfeb;line-height:1.45}.coach-example{margin:11px 0;padding:10px;border:1px solid #335678;border-radius:8px;background:#061226;color:#d9f3ff}.coach-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.complete{display:none;margin-top:12px;padding:14px;border:1px solid #ffe272;border-radius:11px;background:linear-gradient(180deg,rgba(97,37,169,.26),rgba(5,22,43,.88));text-align:center}.complete.show{display:block}.complete h2{color:#ffe891;margin:0 0 5px}.loot{font-size:18px;font-weight:1000;color:#ffe891;margin-top:8px}
+.start-overlay{padding:14px;margin-bottom:12px;text-align:center}.start-overlay p{color:#cbbfda}.start-overlay.hidden{display:none}
+@media(max-width:900px){.game-layout{grid-template-columns:1fr}.coach{position:static}.mission-grid{grid-template-columns:repeat(3,1fr)}.operation-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.dw-bar{grid-template-columns:1fr auto}.dw-account{grid-column:1/-1;grid-row:2;text-align:left}.account-grid{grid-template-columns:1fr 1fr}.mission-grid{grid-template-columns:1fr 1fr}.operation-grid{grid-template-columns:1fr 1fr}.visual-bars{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.difficulty-row{align-items:stretch;flex-direction:column}}
+</style>
+
+<style id="v29-1-step-visuals">
+.step-visual{
+  min-height:126px;
+  margin:10px 0 12px;
+  padding:12px;
+  border:1px solid #2b5676;
+  border-radius:10px;
+  background:linear-gradient(180deg,rgba(5,18,39,.92),rgba(6,10,30,.88));
+}
+.step-visual-title{
+  font-size:10px;
+  font-weight:1000;
+  letter-spacing:.8px;
+  color:#ffe599;
+  margin-bottom:8px;
+}
+.step-visual-row{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+}
+.math-card{
+  min-width:130px;
+  padding:10px;
+  border:1px solid #3c607e;
+  border-radius:9px;
+  background:#07152b;
+  text-align:center;
+}
+.math-card strong{display:block;color:#fff0a8;font-size:12px;margin-bottom:5px}
+.arrow-big{font-size:28px;color:#ffe477;font-weight:1000}
+.lcd-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+}
+.lcd-list{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:5px;
+}
+.lcd-pill{
+  padding:5px 7px;
+  border-radius:999px;
+  border:1px solid #335b77;
+  color:#d9ebf6;
+  font-size:10px;
+  font-weight:900;
+}
+.lcd-pill.hit{
+  border-color:#ffe26c;
+  color:#ffe991;
+  background:rgba(111,75,16,.25);
+}
+.rename-bar{
+  display:grid;
+  height:34px;
+  border:2px solid #d9eef8;
+  border-radius:6px;
+  overflow:hidden;
+  min-width:190px;
+}
+.rename-piece{
+  border-right:1px solid rgba(255,255,255,.28);
+  background:#123853;
+}
+.rename-piece.filled{background:linear-gradient(180deg,#24c8e6,#19799f)}
+.rename-piece.alt.filled{background:linear-gradient(180deg,#ad69f6,#7737b7)}
+.combine-visual{
+  display:grid;
+  grid-template-columns:auto auto auto;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+}
+.combine-stack{text-align:center}
+.combine-stack small{display:block;color:#a9c6d8;font-size:9px;font-weight:900;margin-bottom:4px}
+.simplify-factor{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 11px;
+  border:1px solid #6a4aa5;
+  border-radius:8px;
+  background:#161032;
+  color:#f2e8ff;
+}
+.kcf{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.kcf-step{
+  padding:9px 11px;
+  border:1px solid #4d6f88;
+  border-radius:8px;
+  background:#08172b;
+  text-align:center;
+}
+.kcf-step b{color:#ffe88b}
+.cross-cancel{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:center;
+  gap:10px;
+}
+.cancel-mark{
+  color:#ff8297;
+  text-decoration:line-through 3px;
+  text-decoration-color:#ff8297;
+}
+.final-box{
+  text-align:center;
+  padding:12px;
+  border:1px solid #d5ae47;
+  border-radius:10px;
+  background:rgba(107,71,11,.18);
+}
+.final-box .answer{
+  font-size:30px;
+  color:#fff0a6;
+  font-weight:1000;
+}
+.visual-note{
+  margin-top:8px;
+  text-align:center;
+  color:#b9cddd;
+  font-size:10px;
+  line-height:1.35;
+}
+@media(max-width:650px){
+  .lcd-grid{grid-template-columns:1fr}
+  .combine-visual{grid-template-columns:1fr}
+  .cross-cancel{grid-template-columns:1fr}
+}
+</style>
+<link rel="stylesheet" href="v33-integration/css/direct-visual-v11.css?v=1.1"><script defer src="dragonswood-immersive-ui.js?v=1.0.0"></script></head>
+<body class="round-1">
+<div class="app">
+  <div class="dw-bar">
+    <div class="dw-mark"><img src="v33-integration/assets/branding/dragonswood-mascot-crest.png" alt="Dragonswood crest" style="width:34px;height:34px;object-fit:contain;vertical-align:middle;margin-right:7px">DRAGONSWOOD • FRACTION FORGE</div>
+    <div class="dw-account" id="dwAccount">Linking your adventurer record…</div>
+    <a class="dw-back" href="index.html#games">← GAMES</a>
+  </div>
+
+  <div class="account-grid">
+    <div class="account-card"><small>DRAGONSWOOD LEVEL</small><b id="dwLevel">—</b></div>
+    <div class="account-card"><small>PLAYER XP</small><b id="dwAccountXp">—</b></div>
+    <div class="account-card"><small>GOLD</small><b id="dwGold">—</b></div>
+    <div class="account-card"><small>ROUND REWARD</small><b id="dwReward">Up to 8 XP + 2 Gold</b></div>
+  </div>
+
+  <div class="status" id="dwStatus">Choose your fraction operation and difficulty, then begin the forge.</div>
+  <div class="round-banner" id="roundBanner">🪵 ROUND 1 • PEASANT TRAINING • Up to 8 Player XP</div>
+
+  <div class="hero">
+    <h1><span>FRACTION</span> FORGE</h1>
+    <p>BUILD • MODEL • SOLVE • SIMPLIFY</p>
+  </div>
+
+  <div class="control-panel">
+    <div class="control-title">CHOOSE YOUR FRACTION QUEST</div>
+    <div class="operation-grid" id="operationGrid">
+      <button class="op-btn active" data-op="add"><span>➕</span>ADD</button>
+      <button class="op-btn" data-op="subtract"><span>➖</span>SUBTRACT</button>
+      <button class="op-btn" data-op="multiply"><span>✖️</span>MULTIPLY</button>
+      <button class="op-btn" data-op="divide"><span>➗</span>DIVIDE</button>
+      <button class="op-btn" data-op="mixed"><span>🎲</span>MIXED</button>
+    </div>
+    <div class="difficulty-row">
+      <div class="difficulty-label">DIFFICULTY</div>
+      <div class="difficulty-toggle">
+        <button class="difficulty-btn active" data-difficulty="easy">🌱 EASY</button>
+        <button class="difficulty-btn" data-difficulty="hard">🔥 HARD</button>
+      </div>
+      <div class="difficulty-note" id="difficultyNote"><b>EASY:</b> clean proper fractions, friendly numbers, no improper answers. Built for learning the process.</div>
+    </div>
+  </div>
+
+  <div class="mission-grid">
+    <div class="mission-card xp"><div class="label">🐉 Player XP This Round</div><div class="value" id="playerXp">+0 XP</div><div class="xp-track"><div class="xp-fill" id="xpFill"></div></div></div>
+    <div class="mission-card score"><div class="label">🏆 Quest High Score</div><div class="value"><span id="score">0</span> / 800</div><small>Game score only</small></div>
+    <div class="mission-card"><div class="label">Problems</div><div class="value"><span id="problems">0</span> / 10</div></div>
+    <div class="mission-card"><div class="label">Accuracy</div><div class="value" id="accuracy">100%</div></div>
+    <div class="mission-card"><div class="label">Hints Used</div><div class="value">💡 <span id="hints">0</span></div></div>
+    <div class="mission-card round"><div class="label">Round</div><div class="value"><span id="round">1</span> / 3</div><small id="roundName">Peasant Training</small></div>
+  </div>
+
+  <div class="panel start-overlay" id="startOverlay">
+    <div class="panel-title">READY FOR THE FORGE?</div>
+    <h2 id="startChoice">Addition • Easy</h2>
+    <p>Ten problems per round. Your Math Coach breaks every operation into manageable steps.</p>
+    <button class="action-btn" id="startBtn">START ROUND 1</button>
+  </div>
+
+  <div class="game-layout">
+    <main class="panel">
+      <div class="problem-top">
+        <div>
+          <div class="panel-title">CURRENT PROBLEM</div>
+          <div class="problem-expression" id="expression">—</div>
+        </div>
+        <div class="challenge-tag" id="challengeTag">EASY • ADDITION</div>
+      </div>
+
+      <div class="visual-bars" id="visualBars"></div>
+      <div class="step-visual" id="stepVisual"></div>
+      <div class="steps" id="stepTabs"></div>
+
+      <div class="step-work">
+        <h3 id="stepTitle">Choose your quest above.</h3>
+        <p id="stepPrompt">The Math Coach will guide you through every step.</p>
+        <div class="input-row" id="inputRow"></div>
+        <div class="feedback" id="feedback"></div>
+      </div>
+
+      <div class="complete" id="roundComplete">
+        <h2 id="completeTitle">ROUND COMPLETE!</h2>
+        <p id="completeSummary"></p>
+        <div class="loot" id="dwLoot"></div>
+        <button class="action-btn" id="nextRoundBtn">START NEXT ROUND</button>
+      </div>
+    </main>
+
+    <aside class="panel coach">
+      <span class="coach-title">🧠 MATH COACH</span>
+      <h2 id="coachTitle">Fraction Coach</h2>
+      <p id="coachText">Choose an operation and difficulty. I will explain what to do and why.</p>
+      <div class="coach-example" id="coachExample">Your example will appear here.</div>
+      <div class="coach-actions">
+        <button class="action-btn hint" id="hintBtn">💡 SHOW HINT</button>
+        <button class="action-btn secondary" id="readCoachBtn">🔊 READ COACH</button>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script src="narration-manifest.js?v=59.0.0"></script>
+<script src="dragonswood-narrator.js?v=59.0.0"></script>
+<script>
+const $=id=>document.getElementById(id);
+const PROBLEMS_PER_ROUND=10,TOTAL_ROUNDS=3,SCORE_MAX=800;
+let selectedOp="add",difficulty="easy",started=false,currentRound=1,roundSolved=0;
+let score=0,roundScoreStart=0,totalAttempts=0,correctAttempts=0,hintsUsed=0,problemAttempts=0,hintUsedThisProblem=false;
+let current=null,currentStep=0;
+
+const gcd=(a,b)=>{a=Math.abs(a);b=Math.abs(b);while(b)[a,b]=[b,a%b];return a||1};
+const lcm=(a,b)=>Math.abs(a*b)/gcd(a,b);
+function frac(n,d){if(d<0){n=-n;d=-d}const g=gcd(n,d);return {n:n/g,d:d/g}}
+function rawFrac(n,d){return {n,d}}
+function addF(a,b){return frac(a.n*b.d+b.n*a.d,a.d*b.d)}
+function subF(a,b){return frac(a.n*b.d-b.n*a.d,a.d*b.d)}
+function mulF(a,b){return frac(a.n*b.n,a.d*b.d)}
+function divF(a,b){return frac(a.n*b.d,a.d*b.n)}
+function eqF(a,b){return a.n*b.d===b.n*a.d}
+function isSimplest(a){return gcd(a.n,a.d)===1}
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function choice(arr){return arr[Math.floor(Math.random()*arr.length)]}
+function opSymbol(op){return ({add:"+",subtract:"−",multiply:"×",divide:"÷"})[op]}
+function opName(op){return ({add:"Addition",subtract:"Subtraction",multiply:"Multiplication",divide:"Division",mixed:"Mixed"})[op]}
+function fmtFraction(f){
+  return `<span class="fraction"><span class="num">${f.n}</span><span class="den">${f.d}</span></span>`;
+}
+function fmtAnswer(f){
+  if(Math.abs(f.n)<f.d)return fmtFraction(f);
+  const sign=f.n<0?-1:1,n=Math.abs(f.n),w=Math.floor(n/f.d),r=n%f.d;
+  if(r===0)return `<b>${sign*w}</b>`;
+  return `<span class="mixed"><span class="whole">${sign*w}</span>${fmtFraction({n:r,d:f.d})}</span>`;
+}
+function roundThemeInfo(r=currentRound){
+  if(r===1)return {name:"Peasant Training",label:"PEASANT",icon:"🪵",maxXp:8};
+  if(r===2)return {name:"Warrior Trial",label:"WARRIOR",icon:"⚔️",maxXp:10};
+  return {name:"Mage Trial",label:"MAGE",icon:"🔮",maxXp:12};
+}
+function applyRoundTheme(){
+  document.body.classList.remove("round-1","round-2","round-3");
+  document.body.classList.add(`round-${currentRound}`);
+  const t=roundThemeInfo();
+  $("round").textContent=currentRound;$("roundName").textContent=t.name;
+  $("roundBanner").textContent=`${t.icon} ROUND ${currentRound} • ${t.label} • Up to ${t.maxXp} Player XP`;
+  $("dwReward").textContent=`Up to ${t.maxXp} XP + 2 Gold`;
+}
+function runXp(){
+  const base=Math.floor(roundSolved/2); // 0-5 during round
+  if(roundSolved<PROBLEMS_PER_ROUND)return base;
+  const acc=totalAttempts?correctAttempts/totalAttempts:1;
+  let bonus=0;if(acc>=.90)bonus+=2;else if(acc>=.75)bonus+=1;if(hintsUsed===0)bonus+=1;
+  bonus+=currentRound-1;
+  return Math.min(roundThemeInfo().maxXp,base+bonus);
+}
+function updateStats(){
+  $("playerXp").textContent=`+${runXp()} XP`;
+  $("xpFill").style.width=`${Math.min(100,runXp()/roundThemeInfo().maxXp*100)}%`;
+  $("score").textContent=score-roundScoreStart;
+  $("problems").textContent=roundSolved;
+  $("accuracy").textContent=`${totalAttempts?Math.round(correctAttempts/totalAttempts*100):100}%`;
+  $("hints").textContent=hintsUsed;
+  applyRoundTheme();
+}
+function barMarkup(f,label){
+  const whole=Math.min(1,Math.abs(f.n/f.d));
+  let cells="";
+  for(let i=0;i<f.d;i++)cells+=`<div class="piece ${i<Math.min(Math.abs(f.n),f.d)?"filled":""}"></div>`;
+  return `<div class="bar-box"><div class="bar-label">${label}: ${fmtFraction(f)}</div><div class="fraction-bar" style="grid-template-columns:repeat(${f.d},1fr)">${cells}</div></div>`;
+}
+function renderBars(){
+  $("visualBars").innerHTML=barMarkup(current.a,"FIRST FRACTION")+barMarkup(current.b,"SECOND FRACTION");
+}
+function miniFrac(f){
+  return `<span style="display:inline-grid;grid-template-rows:auto auto;line-height:1.05;min-width:34px;text-align:center;font-weight:1000">
+    <span style="border-bottom:2px solid currentColor;padding:0 4px 2px">${f.n}</span>
+    <span style="padding:2px 4px 0">${f.d}</span>
+  </span>`;
+}
+function segmentBar(f,total,label,alt=false){
+  const n=Math.round(f.n*(total/f.d));
+  let pieces="";
+  for(let i=0;i<total;i++)pieces+=`<div class="rename-piece ${i<n?"filled":""} ${alt?"alt":""}"></div>`;
+  return `<div class="math-card"><strong>${label}</strong>${miniFrac(f)}
+    <div class="rename-bar" style="grid-template-columns:repeat(${total},1fr);margin-top:8px">${pieces}</div>
+  </div>`;
+}
+function multiples(n,count=8){return Array.from({length:count},(_,i)=>n*(i+1))}
+function multiplesThroughMatch(d, lcd){
+  const count=Math.max(8, Math.ceil(lcd/d));
+  return Array.from({length:count},(_,i)=>d*(i+1));
+}
+function renderStepVisual(){
+  if(!current){$("stepVisual").innerHTML="";return}
+  const p=current,key=stepsFor(current)[currentStep].key,hard=difficulty==="hard";
+  let title="",body="",note="";
+  if((p.op==="add"||p.op==="subtract")&&key==="lcd"){
+    const m1=multiplesThroughMatch(p.a.d,p.lcd),m2=multiplesThroughMatch(p.b.d,p.lcd);
+    title=hard?"VISUAL: COMPARE THE MULTIPLES":"VISUAL: FIND THE MATCHING MULTIPLES";
+    body=`<div class="lcd-grid">
+      <div class="math-card"><strong>Multiples of ${p.a.d}</strong><div class="lcd-list">${m1.map(x=>`<span class="lcd-pill ${!hard&&m2.includes(x)?"hit":""}">${x}</span>`).join("")}</div></div>
+      <div class="math-card"><strong>Multiples of ${p.b.d}</strong><div class="lcd-list">${m2.map(x=>`<span class="lcd-pill ${!hard&&m1.includes(x)?"hit":""}">${x}</span>`).join("")}</div></div></div>`;
+    note=hard?"A match is always shown. In Hard mode it is NOT highlighted, so find the smallest number in BOTH lists.":"Matching multiples are highlighted. You still choose the SMALLEST match.";
+  }else if((p.op==="add"||p.op==="subtract")&&key==="rename"){
+    title="VISUAL: YOU BUILD THE EQUIVALENT FRACTIONS";
+    const blank=n=>Array.from({length:n},()=>'<div class="rename-piece"></div>').join("");
+    body=`<div class="step-visual-row">
+      ${segmentBar(p.a,p.a.d,"Original 1")}<div class="arrow-big">→</div>
+      <div class="math-card"><strong>Renamed 1</strong><div style="font-size:26px;color:#8ea5b6;font-weight:1000">? / ${p.lcd}</div><div class="rename-bar" style="grid-template-columns:repeat(${p.lcd},1fr);margin-top:8px">${blank(p.lcd)}</div></div>
+      ${segmentBar(p.b,p.b.d,"Original 2",true)}<div class="arrow-big">→</div>
+      <div class="math-card"><strong>Renamed 2</strong><div style="font-size:26px;color:#8ea5b6;font-weight:1000">? / ${p.lcd}</div><div class="rename-bar" style="grid-template-columns:repeat(${p.lcd},1fr);margin-top:8px">${blank(p.lcd)}</div></div></div>`;
+    note=hard?"Find both scale factors and both new numerators yourself.":"The target denominator is shown. You determine what belongs on top.";
+  }else if((p.op==="add"||p.op==="subtract")&&key==="combine"){
+    const l=rawFrac(p.a.n*(p.lcd/p.a.d),p.lcd),r=rawFrac(p.b.n*(p.lcd/p.b.d),p.lcd);
+    title=`VISUAL: ${p.op==="add"?"COMBINE":"REMOVE"} LIKE-SIZE PIECES`;
+    body=`<div class="combine-visual"><div>${miniFrac(l)}</div><div class="arrow-big">${opSymbol(p.op)}</div><div>${miniFrac(r)}</div><div class="arrow-big">=</div><div style="font-size:28px;color:#8ea5b6;font-weight:1000">? / ${p.lcd}</div></div>`;
+    note="The denominator stays because the pieces are the same size. You calculate the numerator.";
+  }else if(key==="reciprocal"){
+    title="VISUAL: KEEP • CHANGE • FLIP";
+    body=`<div class="kcf"><div class="kcf-step"><b>KEEP</b><br>${miniFrac(p.a)}</div><div class="kcf-step"><b>CHANGE</b><br>÷ → ×</div><div class="kcf-step"><b>FLIP</b><br>${miniFrac(p.b)} → <span style="font-size:24px;color:#8ea5b6">? / ?</span></div></div>`;
+    note="You write the reciprocal. The visual does not flip it for you.";
+  }else if(key==="plan"){
+    title="VISUAL: PLAN THE PRODUCT";
+    body=`<div class="step-visual-row"><div class="math-card"><strong>TOP × TOP</strong>${p.a.n} × ${p.b.n} = ?</div><div class="math-card"><strong>BOTTOM × BOTTOM</strong>${p.a.d} × ${p.b.d} = ?</div></div>`;
+    note=hard?"Check for cross-canceling first. Then calculate.":"The structure is shown, but the products are yours.";
+  }else if(key==="numprod"){
+    const b=p.op==="divide"?p.b.d:p.b.n; title="VISUAL: TOP × TOP";
+    body=`<div class="math-card" style="margin:auto"><strong>Numerators</strong>${p.a.n} × ${b} = ?</div>`;note="Calculate it.";
+  }else if(key==="denprod"){
+    const b=p.op==="divide"?p.b.n:p.b.d; title="VISUAL: BOTTOM × BOTTOM";
+    body=`<div class="math-card" style="margin:auto"><strong>Denominators</strong>${p.a.d} × ${b} = ?</div>`;note="Calculate it.";
+  }else if(key==="simplify"){
+    const raw=rawResult(p); title="VISUAL: REDUCE IT YOURSELF";
+    body=`<div class="step-visual-row"><div class="math-card"><strong>Before</strong>${miniFrac(raw)}</div><div class="arrow-big">÷ ? →</div><div class="math-card"><strong>Simplest form</strong><span style="font-size:27px;color:#8ea5b6">? / ?</span></div></div>`;
+    note=hard?"Find the GCF with no factor supplied.":"Find a common factor that divides both parts.";
+  }else if(key==="final"){
+    title="VISUAL: FINISH THE ANSWER";
+    body=`<div class="final-box"><div class="answer" style="color:#8ea5b6">${Math.abs(p.result.n)>=p.result.d?"?  ?/?":"?/?"}</div></div>`;
+    note=Math.abs(p.result.n)>=p.result.d?"Convert your improper result to a mixed number, then simplify.":"Enter your simplified fraction.";
+  }
+  $("stepVisual").innerHTML=`<div class="step-visual-title">${title}</div>${body}<div class="visual-note">${note}</div>`;
+}
+function generateEasy(op){
+  if(op==="add"||op==="subtract"){
+    const d=choice([4,5,6,8,10,12]);
+    let aN,bN;
+    if(op==="add"){
+      do{aN=rand(1,d-2);bN=rand(1,d-aN-1)}while(aN+bN>=d);
+    }else{
+      aN=rand(2,d-1);bN=rand(1,aN-1);
+    }
+    return makeProblem(op,rawFrac(aN,d),rawFrac(bN,d));
+  }
+  if(op==="multiply"){
+    for(let k=0;k<100;k++){
+      const a=rawFrac(rand(1,4),choice([3,4,5,6,8]));
+      const b=rawFrac(rand(1,4),choice([3,4,5,6,8]));
+      if(a.n<a.d&&b.n<b.d&&mulF(a,b).n<mulF(a,b).d)return makeProblem(op,a,b);
+    }
+  }
+  if(op==="divide"){
+    for(let k=0;k<200;k++){
+      const a=rawFrac(rand(1,5),choice([4,5,6,8,10]));
+      const b=rawFrac(rand(1,5),choice([4,5,6,8,10]));
+      if(a.n<a.d&&b.n<b.d){
+        const r=divF(a,b);
+        if(r.n>0&&r.n<r.d)return makeProblem(op,a,b);
+      }
+    }
+    return makeProblem(op,rawFrac(1,4),rawFrac(2,3));
+  }
+}
+function generateHard(op){
+  if(op==="add"||op==="subtract"){
+    for(let k=0;k<500;k++){
+      const d1=rand(7,18),d2=rand(8,20);
+      if(d1===d2||gcd(d1,d2)>3)continue;
+      const a=rawFrac(rand(2,d1*2+5),d1),b=rawFrac(rand(2,d2*2+5),d2);
+      const r=op==="add"?addF(a,b):subF(a,b);
+      if(r.n>0 && lcm(d1,d2)>=40)return makeProblem(op,a,b);
+    }
+    return makeProblem(op,rawFrac(17,12),rawFrac(op==="add"?11:5,14));
+  }
+  if(op==="multiply"){
+    for(let k=0;k<300;k++){
+      const a=rawFrac(rand(5,24),rand(6,16)),b=rawFrac(rand(5,24),rand(7,18));
+      const r=mulF(a,b);
+      if(r.n>=r.d && gcd(a.n,b.d)>1 && gcd(b.n,a.d)>1)return makeProblem(op,a,b);
+    }
+    return makeProblem(op,rawFrac(14,15),rawFrac(25,21));
+  }
+  if(op==="divide"){
+    for(let k=0;k<300;k++){
+      const a=rawFrac(rand(5,24),rand(6,16)),b=rawFrac(rand(4,20),rand(7,18));
+      const r=divF(a,b);
+      if(r.n>0 && r.n>=r.d)return makeProblem(op,a,b);
+    }
+    return makeProblem(op,rawFrac(17,12),rawFrac(8,15));
+  }
+}
+function makeProblem(op,a,b){
+  const result=op==="add"?addF(a,b):op==="subtract"?subF(a,b):op==="multiply"?mulF(a,b):divF(a,b);
+  return {op,a,b,result,lcd:lcm(a.d,b.d)};
+}
+function newProblem(){
+  const op=selectedOp==="mixed"?choice(["add","subtract","multiply","divide"]):selectedOp;
+  current=difficulty==="easy"?generateEasy(op):generateHard(op);
+  currentStep=0;problemAttempts=0;hintUsedThisProblem=false;
+  $("roundComplete").classList.remove("show");
+  $("expression").innerHTML=`${fmtFraction(current.a)} <span style="color:#ffe37d">${opSymbol(current.op)}</span> ${fmtFraction(current.b)}`;
+  $("challengeTag").textContent=`${difficulty.toUpperCase()} • ${opName(current.op).toUpperCase()}`;
+  renderBars();renderSteps();renderCurrentStep();renderStepVisual();updateStats();
+}
+function stepsFor(p){
+  if(p.op==="add"||p.op==="subtract")return [
+    {key:"lcd",name:"1. COMMON DENOMINATOR"},
+    {key:"rename",name:"2. RENAME"},
+    {key:"combine",name:`3. ${p.op==="add"?"ADD":"SUBTRACT"}`},
+    {key:"simplify",name:"4. SIMPLIFY"},
+    {key:"final",name:difficulty==="hard"?"5. MIXED / FINAL":"5. FINAL"}
+  ];
+  if(p.op==="multiply")return [
+    {key:"plan",name:"1. SET UP"},
+    {key:"numprod",name:"2. NUMERATORS"},
+    {key:"denprod",name:"3. DENOMINATORS"},
+    {key:"simplify",name:"4. SIMPLIFY"},
+    {key:"final",name:difficulty==="hard"?"5. MIXED / FINAL":"5. FINAL"}
+  ];
+  return [
+    {key:"reciprocal",name:"1. KEEP • CHANGE • FLIP"},
+    {key:"numprod",name:"2. NUMERATORS"},
+    {key:"denprod",name:"3. DENOMINATORS"},
+    {key:"simplify",name:"4. SIMPLIFY"},
+    {key:"final",name:difficulty==="hard"?"5. MIXED / FINAL":"5. FINAL"}
+  ];
+}
+function renderSteps(){
+  const steps=stepsFor(current);
+  $("stepTabs").innerHTML=steps.map((s,i)=>`<div class="step-tab ${i<currentStep?"done":i===currentStep?"active":""}">${s.name}</div>`).join("");
+}
+function field(id,label,placeholder="",small=false){
+  return `<div class="field"><label>${label}</label><input ${small?'class="small"':''} id="${id}" inputmode="numeric" placeholder="${placeholder}"></div>`;
+}
+function fractionFields(prefix,label){
+  return `<div class="field"><label>${label}</label><div style="display:flex;align-items:center;gap:5px">${field(prefix+"N","NUM","",true)}<b>/</b>${field(prefix+"D","DEN","",true)}</div></div>`;
+}
+function finalFields(){
+  return `${field("whole","WHOLE # (0 if none)","0",true)} ${field("finalN","NUM","",true)} <b style="margin-bottom:10px">/</b> ${field("finalD","DEN","",true)}`;
+}
+function setCoach(title,text,example){
+  $("coachTitle").textContent=title;$("coachText").innerHTML=text;$("coachExample").innerHTML=example;
+}
+function renderCurrentStep(){
+  renderSteps();renderStepVisual();$("feedback").className="feedback";$("feedback").textContent="";
+  const key=stepsFor(current)[currentStep].key,p=current;
+  let title="",prompt="",inputs="",coachTitle="",coach="",example="";
+  if((p.op==="add"||p.op==="subtract")&&key==="lcd"){
+    title="Find a common denominator";
+    prompt=difficulty==="easy"?"The denominators already match. Identify that common denominator.":"Find the least common denominator (LCD).";
+    inputs=field("lcd","LCD");
+    coachTitle="Common Denominators";
+    coach="Fractions must name the <b>same-size pieces</b> before you can add or subtract them.";
+    example=difficulty==="easy"?`Both denominators are ${p.a.d}, so the LCD is <b>${p.a.d}</b>.`:`Find the least number both ${p.a.d} and ${p.b.d} divide into evenly.`;
+  }else if((p.op==="add"||p.op==="subtract")&&key==="rename"){
+    title="Rename both fractions";
+    prompt=`Write equivalent fractions with denominator ${p.lcd}.`;
+    inputs=fractionFields("left","FIRST FRACTION")+fractionFields("right","SECOND FRACTION");
+    coachTitle="Equivalent Fractions";
+    coach="Whatever you multiply the denominator by, multiply the numerator by the <b>same number</b>.";
+    example=`${fmtFraction(p.a)} = ?/${p.lcd} &nbsp;&nbsp; and &nbsp;&nbsp; ${fmtFraction(p.b)} = ?/${p.lcd}`;
+  }else if((p.op==="add"||p.op==="subtract")&&key==="combine"){
+    title=p.op==="add"?"Add the numerators":"Subtract the numerators";
+    prompt=`Keep denominator ${p.lcd}. Work only with the numerators now.`;
+    inputs=fractionFields("combine","RESULT BEFORE SIMPLIFYING");
+    coachTitle="Combine Like Pieces";
+    coach=`Once denominators match, ${p.op==="add"?"add":"subtract"} the numerators and <b>keep the denominator</b>.`;
+    example=`The denominator stays <b>${p.lcd}</b>.`;
+  }else if(p.op==="multiply"&&key==="plan"){
+    title="Set up the multiplication";
+    prompt="Unlike addition, you do NOT need a common denominator. Confirm the operation.";
+    inputs=`<button class="action-btn" id="planReady">I'M READY TO MULTIPLY</button>`;
+    coachTitle="Multiply Straight Across";
+    coach="For multiplication, multiply <b>numerator × numerator</b> and <b>denominator × denominator</b>. You can simplify afterward.";
+    example=`${fmtFraction(p.a)} × ${fmtFraction(p.b)}`;
+  }else if(p.op==="divide"&&key==="reciprocal"){
+    title="Keep • Change • Flip";
+    prompt="Keep the first fraction. Change ÷ to ×. Flip the SECOND fraction.";
+    inputs=fractionFields("flip","FLIPPED SECOND FRACTION");
+    coachTitle="Keep • Change • Flip";
+    coach="Division by a fraction becomes multiplication by its reciprocal. <b>Only flip the second fraction.</b>";
+    example=`${fmtFraction(p.a)} ÷ ${fmtFraction(p.b)} → ${fmtFraction(p.a)} × ${fmtFraction({n:p.b.d,d:p.b.n})}`;
+  }else if(key==="numprod"){
+    title="Multiply the numerators";
+    prompt="Multiply the top numbers.";
+    inputs=field("numProd","NUMERATOR PRODUCT");
+    coachTitle="Top × Top";
+    coach="Multiply the numerators. Do not add them.";
+    const bn=p.op==="divide"?p.b.d:p.b.n;
+    example=`${p.a.n} × ${bn} = ?`;
+  }else if(key==="denprod"){
+    title="Multiply the denominators";
+    prompt="Multiply the bottom numbers.";
+    inputs=field("denProd","DENOMINATOR PRODUCT");
+    coachTitle="Bottom × Bottom";
+    coach="Multiply the denominators.";
+    const bd=p.op==="divide"?p.b.n:p.b.d;
+    example=`${p.a.d} × ${bd} = ?`;
+  }else if(key==="simplify"){
+    title="Simplify the fraction";
+    prompt="Reduce the answer to lowest terms.";
+    inputs=fractionFields("simple","SIMPLIFIED FRACTION");
+    coachTitle="Simplest Form";
+    coach="Divide the numerator and denominator by their greatest common factor until they share no factor greater than 1.";
+    const raw=rawResult(p);example=`Before simplifying: ${fmtFraction(raw)}`;
+  }else if(key==="final"){
+    title=difficulty==="hard"&&Math.abs(p.result.n)>=p.result.d?"Write the final answer as a mixed number":"Confirm the final answer";
+    prompt=difficulty==="hard"&&Math.abs(p.result.n)>=p.result.d?"Convert the improper fraction to a mixed number.":"Enter your simplified final answer.";
+    inputs=finalFields();
+    coachTitle="Final Answer";
+    coach=difficulty==="hard"&&Math.abs(p.result.n)>=p.result.d
+      ?"Divide numerator by denominator. The quotient is the whole number; the remainder becomes the new numerator."
+      :"Your final fraction should be equivalent to the result and in simplest form.";
+    example=`Correct value: ${difficulty==="easy"?"keep it proper and simplified":"simplify, then convert if improper"}.`;
+  }
+  $("stepTitle").textContent=title;$("stepPrompt").innerHTML=prompt;$("inputRow").innerHTML=inputs;
+  setCoach(coachTitle,coach,example);
+  if($("planReady"))$("planReady").onclick=()=>advanceCorrect();
+  [...$("inputRow").querySelectorAll("input")].forEach(inp=>inp.addEventListener("keydown",e=>{if(e.key==="Enter")checkStep()}));
+  if(!$("planReady"))$("inputRow").insertAdjacentHTML("beforeend",`<button class="action-btn" id="checkBtn">CHECK STEP</button>`);
+  if($("checkBtn"))$("checkBtn").onclick=checkStep;
+}
+let fractionStepPending=false,roundReported=false,fractionRewardRunId=(crypto.randomUUID?.()||`${Date.now()}-${Math.random()}`).replace(/[^a-zA-Z0-9_-]/g,'').slice(0,48);
+function rawResult(p){
+  if(p.op==="add")return rawFrac(p.a.n*(p.lcd/p.a.d)+p.b.n*(p.lcd/p.b.d),p.lcd);
+  if(p.op==="subtract")return rawFrac(p.a.n*(p.lcd/p.a.d)-p.b.n*(p.lcd/p.b.d),p.lcd);
+  if(p.op==="multiply")return rawFrac(p.a.n*p.b.n,p.a.d*p.b.d);
+  return rawFrac(p.a.n*p.b.d,p.a.d*p.b.n);
+}
+function val(id){const el=$(id);return el?Number(el.value):NaN}
+function checkStep(){
+  if(fractionStepPending)return;
+  totalAttempts++;problemAttempts++;
+  const key=stepsFor(current)[currentStep].key,p=current;
+  let ok=false;
+  if(key==="lcd")ok=val("lcd")===p.lcd;
+  else if(key==="rename"){
+    const ln=p.a.n*(p.lcd/p.a.d),rn=p.b.n*(p.lcd/p.b.d);
+    ok=val("leftN")===ln&&val("leftD")===p.lcd&&val("rightN")===rn&&val("rightD")===p.lcd;
+  }else if(key==="combine"){
+    const raw=rawResult(p);ok=val("combineN")===raw.n&&val("combineD")===raw.d;
+  }else if(key==="reciprocal")ok=val("flipN")===p.b.d&&val("flipD")===p.b.n;
+  else if(key==="numprod"){
+    const expected=p.op==="divide"?p.a.n*p.b.d:p.a.n*p.b.n;ok=val("numProd")===expected;
+  }else if(key==="denprod"){
+    const expected=p.op==="divide"?p.a.d*p.b.n:p.a.d*p.b.d;ok=val("denProd")===expected;
+  }else if(key==="simplify"){
+    const entered=rawFrac(val("simpleN"),val("simpleD"));
+    ok=entered.d>0&&eqF(entered,p.result)&&gcd(Math.abs(entered.n),entered.d)===1;
+  }else if(key==="final"){
+    const w=Number.isFinite(val("whole"))?val("whole"):0,n=val("finalN"),d=val("finalD");
+    if(d>0&&Number.isFinite(n)){
+      const signedWhole=w<0?-1:1;
+      const improper=rawFrac(w===0?n:(Math.abs(w)*d+n)*signedWhole,d);
+      ok=eqF(improper,p.result)&&gcd(Math.abs(n),d)===1&&(difficulty!=="hard"||Math.abs(p.result.n)<p.result.d||Math.abs(w)>=1);
+    }
+  }
+  if(ok){fractionStepPending=true;correctAttempts++;showFeedback(true,"✓ Correct. Nice work.");setTimeout(()=>{fractionStepPending=false;advanceCorrect()},280)}
+  else showFeedback(false,"Not yet. Check the Math Coach, or use a hint and try again.");
+  updateStats();
+}
+function advanceCorrect(){
+  if(currentStep<stepsFor(current).length-1){currentStep++;renderCurrentStep();return}
+  finishProblem();
+}
+function showFeedback(good,text){$("feedback").className=`feedback ${good?"good":"bad"}`;$("feedback").textContent=text}
+function scoreProblem(){
+  let pts=50;
+  if(problemAttempts<=stepsFor(current).length)pts+=20;
+  if(!hintUsedThisProblem)pts+=10;
+  return Math.max(25,Math.min(80,pts));
+}
+function finishProblem(){
+  roundSolved++;
+  score+=scoreProblem();
+  updateStats();
+  if(roundSolved>=PROBLEMS_PER_ROUND){finishRound();return}
+  setTimeout(newProblem,450);
+}
+function finishRound(){
+  if(roundReported)return;roundReported=true;
+  const xp=runXp(),roundScore=score-roundScoreStart;
+  $("roundComplete").classList.add("show");
+  $("completeTitle").textContent=`${roundThemeInfo().icon} ROUND ${currentRound} COMPLETE!`;
+  $("completeSummary").textContent=`10 problems solved • +${xp} Player XP before daily cap • High Score ${roundScore}/800`;
+  $("nextRoundBtn").textContent=currentRound<TOTAL_ROUNDS?"START NEXT ROUND":"START NEW 3-ROUND QUEST";
+  window.dispatchEvent(new CustomEvent("dragonswood-fraction-round-complete",{detail:{
+    round:currentRound,playerXpEarned:xp,roundScore,accuracy:totalAttempts?correctAttempts/totalAttempts:1,
+    hintsUsed,operation:selectedOp,difficulty,runId:fractionRewardRunId
+  }}));
+}
+$("nextRoundBtn").onclick=()=>{
+  $("roundComplete").classList.remove("show");
+  if(currentRound<TOTAL_ROUNDS){currentRound++;roundSolved=0;roundScoreStart=score;totalAttempts=0;correctAttempts=0;hintsUsed=0;roundReported=false}
+  else{currentRound=1;roundSolved=0;score=0;roundScoreStart=0;totalAttempts=0;correctAttempts=0;hintsUsed=0;roundReported=false;fractionRewardRunId=(crypto.randomUUID?.()||`${Date.now()}-${Math.random()}`).replace(/[^a-zA-Z0-9_-]/g,'').slice(0,48)}
+  applyRoundTheme();newProblem();
+}
+$("hintBtn").onclick=()=>{
+  if(!current||!started)return;
+  if(!hintUsedThisProblem){hintUsedThisProblem=true;hintsUsed++}
+  const key=stepsFor(current)[currentStep].key;
+  const hardHints={
+    lcd:"List multiples of each denominator and find the first number both lists share.",
+    rename:"Find the factor that changes each denominator into the LCD. Use that same factor on its numerator.",
+    combine:"Keep the common denominator. Work only with the numerators.",
+    reciprocal:"Keep the first fraction, change ÷ to ×, and flip only the second fraction.",
+    plan:"Look diagonally for common factors before multiplying.",
+    numprod:"Multiply the numerators.",
+    denprod:"Multiply the denominators.",
+    simplify:"Find the greatest common factor of the numerator and denominator.",
+    final:"If the result is improper, convert it to a mixed number. Simplify completely."
+  };
+  const easyHints={
+    lcd:"The highlighted numbers occur in both lists. Choose the smallest highlighted match.",
+    rename:"Ask what each denominator multiplied by to reach the LCD. Multiply its numerator by the same number.",
+    combine:"The denominator stays the same now. Combine only the numerators.",
+    reciprocal:"Keep, change, flip. Only the second fraction flips.",
+    plan:"Multiply top × top and bottom × bottom.",
+    numprod:"Multiply the top numbers.",
+    denprod:"Multiply the bottom numbers.",
+    simplify:"Find a number that divides both numerator and denominator evenly.",
+    final:"Use simplest form. Convert an improper fraction to a mixed number."
+  };
+  $("feedback").className="feedback good";
+  $("feedback").textContent="💡 "+(difficulty==="hard"?hardHints[key]:easyHints[key])+" Using a hint removes the no-hint bonus XP/Gold.";
+  updateStats();
+}
+$("readCoachBtn").onclick=()=>{
+  const text=`${$("coachTitle").textContent}. ${$("coachText").textContent}. ${$("coachExample").textContent}`;
+  window.DWNarrator?.play({id:`fraction-forge/coach/${currentStep||"lesson"}`,text,contentType:"general"});
+}
+document.querySelectorAll("[data-op]").forEach(b=>b.onclick=async()=>{
+  if(started&&roundSolved>0){const approved=await(window.DWImmersiveUI?.confirm({title:"Restart this forge run?",message:"Changing the operation clears progress in the current three-round quest.",confirmLabel:"Restart",cancelLabel:"Keep playing",danger:true})||Promise.resolve(false));if(!approved)return}
+  selectedOp=b.dataset.op;document.querySelectorAll("[data-op]").forEach(x=>x.classList.toggle("active",x===b));resetForChoice();updateChoiceText();
+});
+document.querySelectorAll("[data-difficulty]").forEach(b=>b.onclick=async()=>{
+  if(started&&roundSolved>0){const approved=await(window.DWImmersiveUI?.confirm({title:"Restart this forge run?",message:"Changing the difficulty clears progress in the current three-round quest.",confirmLabel:"Restart",cancelLabel:"Keep playing",danger:true})||Promise.resolve(false));if(!approved)return}
+  difficulty=b.dataset.difficulty;document.querySelectorAll("[data-difficulty]").forEach(x=>x.classList.toggle("active",x===b));
+  $("difficultyNote").innerHTML=difficulty==="easy"
+    ?"<b>EASY:</b> clean proper fractions, friendly numbers, no improper answers. Built for learning the process."
+    :"<b>HARD:</b> unlike denominators, improper fractions, mixed-number answers, and less forgiving numbers.";
+  resetForChoice();updateChoiceText();
+});
+function resetForChoice(){started=false;currentRound=1;roundSolved=0;score=0;roundScoreStart=0;totalAttempts=0;correctAttempts=0;hintsUsed=0;$("startOverlay").classList.remove("hidden");$("roundComplete").classList.remove("show");applyRoundTheme();updateStats()}
+function updateChoiceText(){$("startChoice").textContent=`${opName(selectedOp)} • ${difficulty==="easy"?"Easy":"Hard"}`}
+$("startBtn").onclick=()=>{started=true;$("startOverlay").classList.add("hidden");newProblem()}
+applyRoundTheme();updateStats();updateChoiceText();
+</script>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import {getFirestore,doc,getDoc,writeBatch,serverTimestamp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig={"apiKey":"AIzaSyC918WJoGQgxRKsqcz-3bXI7iZWv_1bwYE","authDomain":"dragonswood-9289e.firebaseapp.com","projectId":"dragonswood-9289e","storageBucket":"dragonswood-9289e.firebasestorage.app","messagingSenderId":"1064477064695","appId":"1:1064477064695:web:283e1016ee2303d39042f2","measurementId":"G-LPRLDGVBD2"};
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const DOMAIN="explore.academy",DAILY_CAP=150;
+const XP_THRESHOLDS=[0,200,450,750,1100,1500,1950,2450,3000,3600,4250,4950,5700,6500,7350,8250,9200,10200,11100,12000];
+let currentUser=null,currentProfile=null;
+const $=id=>document.getElementById(id);
+function dateKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+function dailyXp(p){return String(p?.dailyXpDate||"")===dateKey()?Math.max(0,Math.min(DAILY_CAP,Number(p?.dailyXpEarned||0))):0}
+function levelFromXp(xp){let l=1;for(let i=0;i<XP_THRESHOLDS.length;i++)if(xp>=XP_THRESHOLDS[i])l=i+1;return Math.min(20,l)}
+function setStatus(t,type=""){$("dwStatus").textContent=t;$("dwStatus").className=`status ${type}`.trim()}
+function renderAccount(){
+  if(!currentProfile)return;
+  $("dwLevel").textContent=levelFromXp(Number(currentProfile.xp||0));
+  $("dwAccountXp").textContent=Number(currentProfile.xp||0).toLocaleString();
+  $("dwGold").textContent=Number(currentProfile.gold||0).toLocaleString();
+  const name=currentProfile.firstName||currentUser?.email||"Adventurer";
+  $("dwAccount").innerHTML=`Connected as <b>${name}</b> • Daily XP ${dailyXp(currentProfile)} / ${DAILY_CAP}`;
+}
+onAuthStateChanged(auth,async user=>{
+  currentUser=user;
+  if(!user){setStatus("Open Fraction Forge from your signed-in Dragonswood portal to save Player XP and Gold.","warn");return}
+  if(!String(user.email||"").toLowerCase().endsWith("@"+DOMAIN)){setStatus("Rewards require an @explore.academy student account.","error");return}
+  try{
+    const snap=await getDoc(doc(db,"students",user.uid));
+    if(!snap.exists()){setStatus("Create your Dragonswood character first.","warn");return}
+    currentProfile=snap.data();renderAccount();
+    if(Number(currentProfile.hp||0)<=0)setStatus("💀 KNOCKED OUT: You may practice fractions, but cannot earn Player XP or Gold until revival.","warn");
+    else setStatus("Connected. Complete each 10-problem round to earn a small Dragonswood reward.","good");
+  }catch(err){console.warn('[Fraction Forge rewards]',err);setStatus("The reward ledger could not be reached. You can keep practicing; reconnect before claiming rewards.","error")}
+});
+window.addEventListener("dragonswood-fraction-round-complete",async e=>{
+  const d=e.detail||{},loot=$("dwLoot");
+  if(!currentUser||!currentProfile){loot.textContent="Round complete • Sign in through Dragonswood to save rewards.";return}
+  if(Number(currentProfile.hp||0)<=0){loot.textContent="💀 KNOCKED OUT • Practice complete, but no Player XP or Gold can be earned.";return}
+  const requestedXp=Math.max(0,Math.min(12,Number(d.playerXpEarned||0)));
+  const before=dailyXp(currentProfile),grantXp=Math.min(requestedXp,Math.max(0,DAILY_CAP-before));
+  const acc=Math.max(0,Math.min(1,Number(d.accuracy||0)));
+  const gold=acc>=.9&&Number(d.hintsUsed||0)===0?2:1;
+  const runId=String(d.runId||'legacy').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,48)||'legacy';
+  const claimId=`${currentUser.uid}_fraction_forge_${dateKey()}_${runId}_r${Math.max(1,Number(d.round||1))}`;
+  try{
+    const latest=await getDoc(doc(db,"students",currentUser.uid));if(!latest.exists())throw new Error("Student profile missing");
+    const p=latest.data(),oldXp=Number(p.xp||0),oldGold=Number(p.gold||0),actualBefore=dailyXp(p),actualGrant=Math.min(requestedXp,Math.max(0,DAILY_CAP-actualBefore)),gw=(()=>{const raw=p.dailyGoldWindowStartedAt,start=raw?.toMillis?.()||Number(raw?.seconds||0)*1000||0,reset=!start||Date.now()-start>=86400000;return{earned:reset?0:Math.max(0,Math.min(30,Number(p.dailyGoldEarned||0))),reset}})(),actualGold=Math.min(gold,Math.max(0,30-gw.earned));
+    const claimRef=doc(db,"gameResults",claimId);if((await getDoc(claimRef)).exists()){loot.textContent="🐉 This round reward was already saved.";return}
+    const batch=writeBatch(db);
+    batch.set(claimRef,{
+      studentId:currentUser.uid,studentEmail:currentUser.email||"",gameId:"fraction_forge",gameName:"Fraction Forge",
+      status:"complete",dateKey:dateKey(),round:Number(d.round||1),operation:String(d.operation||"mixed"),
+      difficulty:String(d.difficulty||"easy"),roundScore:Number(d.roundScore||0),accuracy:Math.round(acc*100),
+      hintsUsed:Number(d.hintsUsed||0),runId,xpAward:actualGrant,goldAward:actualGold,createdAt:serverTimestamp()
+    });
+    batch.update(doc(db,"students",currentUser.uid),{
+      xp:oldXp+actualGrant,gold:oldGold+actualGold,dailyXpDate:dateKey(),dailyXpEarned:actualBefore+actualGrant,dailyGoldEarned:gw.earned+actualGold,dailyGoldWindowStartedAt:gw.reset?serverTimestamp():p.dailyGoldWindowStartedAt,
+      lastGameClaimId:claimId,updatedAt:serverTimestamp()
+    });
+    await batch.commit();
+    currentProfile={...p,xp:oldXp+actualGrant,gold:oldGold+actualGold,dailyXpDate:dateKey(),dailyXpEarned:actualBefore+actualGrant,dailyGoldEarned:gw.earned+actualGold,lastGameClaimId:claimId};
+    renderAccount();
+    loot.textContent=actualGrant>0?`🐉 DRAGONSWOOD REWARD: +${actualGrant} Player XP • +${actualGold} Gold`:`⭐ DAILY XP CAP REACHED • +${actualGold} Gold`;
+    setStatus(actualGrant>0?`Saved! Daily XP is now ${actualBefore+actualGrant}/${DAILY_CAP}.`:`Saved! You reached the ${DAILY_CAP} XP daily cap; Gold still awarded.`,"good");
+  }catch(err){
+    console.error(err);loot.textContent="Round complete • Reward not recorded.";
+    setStatus("Your round is complete, but the reward was not recorded. Your math work is safe.","error");
+  }
+});
+</script>
+
+<script id="dragonswood-sound-engine">
+(() => {
+  if (window.DWAudio) return;
+
+  const KEY = "dragonswoodSoundsEnabledV1";
+  let ctx = null;
+  let unlocked = false;
+  let enabled = localStorage.getItem(KEY) !== "off";
+  const lastPlayed = {positive:0, negative:0, bathroom:0, notice:0};
+
+  function getCtx(){
+    if(!enabled) return null;
+    try{
+      if(!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if(ctx.state === "suspended") ctx.resume();
+      unlocked = true;
+      updateBadge();
+      return ctx;
+    }catch(e){ return null; }
+  }
+
+  function tone(freq, start=0, duration=.16, type="sine", gain=.07){
+    const ac = getCtx();
+    if(!ac) return;
+    try{
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.type = type;
+      o.frequency.setValueAtTime(freq, ac.currentTime + start);
+      g.gain.setValueAtTime(.0001, ac.currentTime + start);
+      g.gain.exponentialRampToValueAtTime(gain, ac.currentTime + start + .015);
+      g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + start + duration);
+      o.connect(g); g.connect(ac.destination);
+      o.start(ac.currentTime + start);
+      o.stop(ac.currentTime + start + duration + .03);
+    }catch(e){}
+  }
+
+  function canPlay(kind, gap=220){
+    if(!enabled || !unlocked) return false;
+    const now = Date.now();
+    if(now - (lastPlayed[kind]||0) < gap) return false;
+    lastPlayed[kind] = now;
+    return true;
+  }
+
+  function positive(){
+    if(!canPlay("positive",260)) return;
+    tone(523.25,0,.13,"sine",.065);
+    tone(659.25,.09,.14,"sine",.07);
+    tone(783.99,.18,.22,"sine",.075);
+  }
+
+  function negative(){
+    if(!canPlay("negative",280)) return;
+    tone(233.08,0,.17,"triangle",.07);
+    tone(174.61,.14,.25,"triangle",.075);
+  }
+
+  function bathroom(){
+    if(!canPlay("bathroom",850)) return;
+    // Intentionally distinct from normal success/failure sounds.
+    tone(659.25,0,.18,"sine",.10);
+    tone(880,.20,.20,"sine",.115);
+    tone(659.25,.44,.30,"sine",.10);
+  }
+
+  function notice(){
+    if(!canPlay("notice",500)) return;
+    tone(523.25,0,.13,"sine",.06);
+    tone(783.99,.15,.22,"sine",.075);
+  }
+
+  function setEnabled(v){
+    enabled = !!v;
+    localStorage.setItem(KEY, enabled ? "on" : "off");
+    if(enabled) getCtx();
+    updateBadge();
+  }
+
+  let badge = null;
+  function updateBadge(){
+    if(!badge) return;
+    if(!enabled){
+      badge.textContent = "🔇 Sounds Off";
+      badge.dataset.state = "off";
+    }else if(unlocked){
+      badge.textContent = "🔔 Alerts Armed";
+      badge.dataset.state = "armed";
+    }else{
+      badge.textContent = "🔔 Click to Arm Sounds";
+      badge.dataset.state = "locked";
+    }
+  }
+
+  function addTeacherBadge(){
+    if(!document.body || document.getElementById("dwSoundBadge")) return;
+    badge = document.createElement("button");
+    badge.id = "dwSoundBadge";
+    badge.type = "button";
+    badge.setAttribute("aria-label","Toggle Dragonswood sounds");
+    Object.assign(badge.style,{
+      position:"fixed", right:"14px", bottom:"14px", zIndex:"99999",
+      border:"1px solid rgba(255,220,105,.85)", borderRadius:"999px",
+      padding:"9px 13px", fontWeight:"900", cursor:"pointer",
+      color:"#fff7cc", background:"linear-gradient(90deg,#632fc4,#087da1)",
+      boxShadow:"0 6px 20px rgba(0,0,0,.35)", fontSize:"13px"
+    });
+    badge.onclick = (e) => {
+      e.preventDefault(); e.stopPropagation();
+      if(enabled && unlocked) setEnabled(false);
+      else setEnabled(true);
+    };
+    document.body.appendChild(badge);
+    updateBadge();
+  }
+
+  // Browsers require one user gesture before background-tab audio is permitted.
+  ["pointerdown","keydown","touchstart"].forEach(ev=>{
+    window.addEventListener(ev,()=>{ if(enabled) getCtx(); },{passive:true});
+  });
+
+  window.DWAudio = {
+    positive, negative, bathroom, notice, unlock:getCtx,
+    setEnabled, isEnabled:()=>enabled, isUnlocked:()=>unlocked,
+    addTeacherBadge
+  };
+})();
+</script>
+
+
+<script id="dragonswood-feedback-sounds">
+(() => {
+  if(window.__dwFeedbackSoundsInstalled) return;
+  window.__dwFeedbackSoundsInstalled = true;
+
+  const last = new WeakMap();
+  const good = /\b(correct|success|successful|great|excellent|earned|awarded|approved|saved|complete|completed|victory|won|win|level up|leveled up|unlocked|purchased|perfect|nice work|well done|sent to mr\. evans|back in class)\b/i;
+  const bad  = /\b(wrong|incorrect|failed|failure|denied|dismissed|banned|blocked|could not|can't|cannot|not enough|try again|lost|defeat|error|permission[- ]denied)\b/i;
+
+  function candidate(el){
+    if(!(el instanceof Element)) return null;
+    return el.closest(
+      '.feedback,.status,.message,.notice,.toast,.result,.alert,' +
+      '[id*="feedback" i],[id*="status" i],[id*="message" i],[id*="result" i]'
+    );
+  }
+
+  function inspect(el){
+    const box = candidate(el);
+    if(!box) return;
+    const text = (box.innerText || box.textContent || "").trim();
+    if(!text || last.get(box) === text) return;
+    last.set(box,text);
+    if(bad.test(text)) window.DWAudio?.negative();
+    else if(good.test(text)) window.DWAudio?.positive();
+  }
+
+  const obs = new MutationObserver(records=>{
+    for(const r of records){
+      inspect(r.target instanceof Element ? r.target : r.target.parentElement);
+      for(const n of r.addedNodes || []) if(n instanceof Element) inspect(n);
+    }
+  });
+
+  function start(){
+    if(!document.body) return;
+    obs.observe(document.body,{subtree:true,childList:true,characterData:true});
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",start,{once:true});
+  else start();
+})();
+</script>
+
+<script src="dragonswood-grayson-mode.js?v=58.0"></script>
+</body>
+</html>

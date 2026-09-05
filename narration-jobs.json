@@ -1,0 +1,18 @@
+{
+  "version": 3,
+  "voiceId": "us-brian",
+  "voiceName": "en-US-BrianMultilingualNeural",
+  "clips": [
+    {
+      "id": "system/welcome",
+      "area": "system",
+      "lessonId": "welcome",
+      "sectionId": "greeting",
+      "contentType": "general",
+      "locale": "en-US",
+      "text": "Hello, adventurer, and welcome to Dragonswood. We hope to see you soon—and hear the tales of your journey.",
+      "textVersion": 2,
+      "fallback": true
+    }
+  ]
+}

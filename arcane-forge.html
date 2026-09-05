@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dragonswood | Arcane Forge</title><link rel="icon" type="image/png" href="v33-integration/assets/branding/dragonswood-mascot-crest.png">
+<style>
+:root{--purple:#652DC1;--violet:#a64cff;--cyan:#02CCFE;--gold:#F4C95D;--ink:#05030c;--panel:rgba(8,7,29,.88);--text:#fff8e9;--muted:#c9c3d8;--red:#ff5d78}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;color:var(--text);font-family:Arial,sans-serif;background:radial-gradient(circle at 50% 0,#2b0e50 0,transparent 32%),radial-gradient(circle at 85% 40%,#053b58 0,transparent 24%),linear-gradient(#05030c,#090516 55%,#03030a)}
+button,input{font:inherit}button{cursor:pointer}.shell{width:min(1500px,96%);margin:auto}.top{padding:12px 0;border-bottom:1px solid #f4c95d66;background:#040410bb;backdrop-filter:blur(8px);position:sticky;top:0;z-index:20}.toprow{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}.back{justify-self:start;color:#fff;text-decoration:none;border:1px solid #f4c95d88;border-radius:9px;padding:9px 13px;background:#28104c}.brand{text-align:center}.brand h1{font-family:Georgia,serif;color:#ffe8a0;margin:0;font-size:clamp(27px,4vw,48px);text-shadow:0 0 16px #a64cff66}.brand small{color:#d79cff;font-weight:900;letter-spacing:1.4px}.hud{justify-self:end;display:flex;gap:8px}.pill{border:1px solid #f4c95d55;background:#0b081ddd;border-radius:999px;padding:8px 11px;font-weight:900}.main{display:grid;grid-template-columns:260px minmax(420px,1fr) 330px;gap:12px;padding:12px 0 25px}.panel{border:1px solid #f4c95d66;background:linear-gradient(145deg,#160a32dd,#061226dd);border-radius:14px;box-shadow:0 12px 30px #0007,inset 0 0 25px #652dc11c;overflow:hidden}.panelhead{padding:13px 14px;border-bottom:1px solid #652dc166;background:#090719aa}.panelhead h2{font:900 21px Georgia,serif;color:#ffe8a0;margin:0}.panelhead p{font-size:11px;color:var(--muted);margin:3px 0 0}.inventory{padding:10px;display:grid;gap:7px;max-height:72vh;overflow:auto}.search{width:100%;padding:10px;border-radius:8px;border:1px solid #02ccfe55;background:#050615;color:#fff;margin-bottom:4px}.element{display:flex;align-items:center;gap:9px;padding:9px;border:1px solid #652dc155;background:#0c0923;border-radius:9px;user-select:none;transition:.15s}.element:hover{transform:translateY(-1px);border-color:#f4c95daa}.element .emoji{font-size:25px}.element b{font-size:13px}.element small{display:block;color:#aaa2c4;font-size:9px}.forge{min-height:690px;position:relative;padding:14px;background:radial-gradient(circle at 50% 44%,#652dc12b,transparent 27%),linear-gradient(180deg,#07061599,#03040ccc)}.bossbox{height:245px;border:1px solid #02ccfe44;border-radius:13px;background:radial-gradient(circle at 50% 40%,#88eaff22,transparent 28%),linear-gradient(#08122b,#070719);position:relative;overflow:hidden;text-align:center;padding:12px}.bossname{font:900 25px Georgia,serif;color:#d9f8ff}.boss{font-size:92px;filter:drop-shadow(0 0 18px #02ccfe88);margin:5px}.hpbar{height:19px;background:#150914;border:1px solid #ff7691aa;border-radius:99px;overflow:hidden;max-width:430px;margin:5px auto}.hpfill{height:100%;background:linear-gradient(90deg,#a80e36,#ff5276,#ffad6c);transition:.35s}.bosscopy{font-size:11px;color:#c8eaff}.workspace{margin-top:10px;min-height:400px;border:1px dashed #a64cff88;border-radius:13px;position:relative;background:radial-gradient(circle at 50% 50%,#a64cff18,transparent 35%)}.runes{display:grid;grid-template-columns:1fr 85px 1fr;gap:10px;align-items:center;padding:26px 22px 12px}.slot{height:130px;border:2px solid #f4c95d77;border-radius:16px;background:#0b081dcc;display:grid;place-items:center;text-align:center;padding:8px}.slot.active{box-shadow:0 0 25px #a64cff77;border-color:#ffe8a0}.slot .big{font-size:52px}.slot b{display:block;font-family:Georgia,serif;color:#ffe8a0}.plus{text-align:center;font-size:44px;color:#d891ff}.combine{display:block;margin:5px auto 14px;padding:12px 26px;border:1px solid #ffe8a0;border-radius:9px;background:linear-gradient(90deg,#652dc1,#8f2dd2,#057398);color:white;font-weight:1000}.combine:disabled{opacity:.4}.result{min-height:100px;margin:0 22px 15px;padding:13px;border-radius:12px;border:1px solid #02ccfe55;background:#061327;text-align:center}.result .re{font-size:42px}.result h3{margin:2px;color:#ffe8a0;font:900 23px Georgia,serif}.flash{animation:flash .55s}@keyframes flash{50%{box-shadow:0 0 50px #ffe36d99;transform:scale(1.01)}}.codex{padding:10px}.codexstats{display:grid;grid-template-columns:1fr 1fr;gap:7px}.stat{padding:10px;text-align:center;border:1px solid #652dc155;border-radius:9px;background:#080718}.stat strong{display:block;color:#ffe8a0;font:900 25px Georgia,serif}.discovery{padding:9px;margin-top:7px;border-left:3px solid #652dc1;background:#090719;border-radius:7px;font-size:11px}.discovery.legendary{border-color:#f4c95d;background:#241706}.discovery.epic{border-color:#d657ff}.rarity{font-size:9px;font-weight:1000;letter-spacing:.8px;color:#d99cff}.notice{padding:9px 12px;margin:10px;border:1px solid #f4c95d55;border-radius:8px;background:#22103b;color:#fff0ba;font-size:11px}.attack{width:calc(100% - 20px);margin:0 10px 10px;padding:11px;border:1px solid #ff8b9f;border-radius:8px;background:linear-gradient(90deg,#8d1434,#ce274e);color:#fff;font-weight:1000}.attack:disabled{opacity:.35}.load{font-size:10px;color:#cfc5e4;padding:0 10px 10px}.reset{background:#2a173f;border:1px solid #a64cff77;color:white;border-radius:7px;padding:7px 9px}.toast{position:fixed;left:50%;top:105px;transform:translateX(-50%);z-index:50;background:#160b2f;border:1px solid #ffe8a0;padding:12px 18px;border-radius:10px;font-weight:900;box-shadow:0 10px 30px #0009;display:none}.toast.show{display:block;animation:toast .25s}@keyframes toast{from{transform:translate(-50%,-12px);opacity:0}}
+@media(max-width:1050px){.main{grid-template-columns:220px 1fr}.codexpanel{grid-column:1/-1}.codex{display:grid;grid-template-columns:220px 1fr;gap:10px}.toprow{grid-template-columns:auto 1fr}.hud{display:none}}
+@media(max-width:720px){.main{grid-template-columns:1fr}.inventory{max-height:260px}.runes{grid-template-columns:1fr}.plus{font-size:25px}.forge{min-height:auto}.toprow{display:flex}.brand{flex:1}.brand small{display:none}.bossbox{height:225px}.codex{display:block}}
+</style><link rel="stylesheet" href="v33-integration/css/direct-visual-v11.css?v=1.1"><script defer src="dragonswood-immersive-ui.js?v=1.0.0"></script></head><body>
+<div class="toast" id="toast"></div>
+<header class="top"><div class="shell toprow"><a class="back" href="index.html">← PORTAL</a><div class="brand"><small><img src="v33-integration/assets/branding/dragonswood-mascot-crest.png" alt="Dragonswood crest" style="width:34px;height:34px;object-fit:contain;vertical-align:middle;margin-right:7px">DRAGONSWOOD BOSS GAME</small><h1>⚗️ Arcane Forge 🐉</h1></div><div class="hud"><div class="pill">📖 <span id="hudCount">4</span> discoveries</div><div class="pill">🔥 Boss <span id="bossHpMini">650</span> HP</div></div></div></header>
+<main class="shell main">
+<section class="panel"><div class="panelhead"><h2>🧪 Your Elements</h2><p>Click two discoveries to place them in the forge.</p></div><div class="inventory"><input class="search" id="search" placeholder="Search discoveries..."><div id="elements"></div></div></section>
+<section class="panel forge">
+<div class="bossbox"><div class="bossname" id="bossName">❄️ FROST WYRM</div><div class="boss" id="boss">🐉</div><div class="hpbar"><div class="hpfill" id="hpfill"></div></div><div class="bosscopy"><b id="bossHp">650 / 650 HP</b> • <span id="bossWeakness">Weakness: 🔥 Fire</span> • <span id="bossLevelText">Level 1 of 6</span></div></div>
+<div class="workspace" id="workspace"><div class="runes"><div class="slot" id="slot1"><span>Select an element</span></div><div class="plus">✦ + ✦</div><div class="slot" id="slot2"><span>Select an element</span></div></div><button class="combine" id="combine" disabled>⚡ COMBINE RUNES</button><div class="result" id="result"><div class="re">🔮</div><h3>The forge is waiting.</h3><small>Experiment. Every successful combination is added to your Codex.</small></div><button class="attack" id="attack" disabled>⚔️ USE DISCOVERY AGAINST BOSS</button></div>
+</section>
+<section class="panel codexpanel"><div class="panelhead"><h2>📖 Crafting Codex</h2><p>Your discoveries stay saved on this device.</p></div><div class="codex"><div><div class="codexstats"><div class="stat"><strong id="count">4</strong><small>DISCOVERED</small></div><div class="stat"><strong id="firsts">0</strong><small>NEW FINDS</small></div></div><div class="notice" id="datasetStatus">Consulting the Crafting Codex…</div><button class="reset" id="clearSlots">Clear Forge</button></div><div id="recent"></div></div><div class="load">Every pairing can reveal a reusable discovery. When the Grand Archive can be reached, its school-ready recipes join the Codex automatically.</div></section>
+</main>
+<script>
+const REMOTE='https://icscdn.vantezzen.io/recipes.json';
+const base=[['Water','💧'],['Fire','🔥'],['Earth','🌍'],['Wind','🌬️']];
+const fallback=[
+['Earth','Fire','Lava','🌋'],['Earth','Wind','Dust','🌫️'],['Fire','Fire','Volcano','🌋'],['Fire','Water','Steam','💨'],['Water','Wind','Wave','🌊'],['Earth','Water','Plant','🌱'],['Dust','Water','Mud','🟤'],['Fire','Wind','Smoke','💨'],['Lava','Water','Stone','🪨'],['Plant','Water','Tree','🌳'],['Plant','Wind','Dandelion','🌼'],['Stone','Wind','Sand','🏖️'],['Fire','Stone','Metal','⚙️'],['Fire','Metal','Sword','⚔️'],['Fire','Sword','Flame Sword','🔥'],['Water','Wind','Storm','⛈️'],['Fire','Storm','Lightning','⚡'],['Lightning','Sword','Stormblade','⚡'],['Earth','Plant','Forest','🌲'],['Fire','Forest','Wildfire','🔥'],['Stone','Stone','Mountain','⛰️'],['Mountain','Water','River','🏞️'],['Fire','Water','Energy','✨'],['Energy','Water','Magic','🔮'],['Magic','Sword','Enchanted Sword','🗡️'],['Earth','Magic','Crystal','💎'],['Crystal','Fire','Fire Crystal','🔶'],['Crystal','Water','Ice Crystal','🔷'],['Crystal','Wind','Storm Crystal','💠'],['Dragon','Fire','Fire Dragon','🐲'],['Magic','Lizard','Dragon','🐉'],['Fire','Lizard','Dragon','🐉'],['Dragon','Storm','Storm Dragon','🐲'],['Dragon','Ice Crystal','Frost Wyrm','🐉'],['Metal','Magic','Arcane Armor','🛡️'],['Plant','Magic','Healing Herb','🌿'],['Healing Herb','Water','Potion','🧪'],['Fire Crystal','Sword','Inferno Blade','🔥'],['Storm Crystal','Sword','Tempest Blade','⚡'],['Magic','Wind','Spell','✨'],['Spell','Fire','Fireball','☄️'],['Spell','Water','Ice Spell','❄️'],['Earth','Fire','Forge','⚒️'],['Forge','Metal','Armor','🛡️'],['Armor','Magic','Runic Armor','🛡️'],['Smoke','Smoke','Smog','🌫️'],['Smog','Smoke','Thick Fog','🌁'],['Smog','Fire','Ash Cloud','☁️'],['Ash Cloud','Magic','Arcane Ash','✨'],['Arcane Ash','Dragon','Smoke Drake','🐲'],['Smoke Drake','Arcane Ash','Arcane Smoke Drake','🐉']];
+const bad=/\b(sex|porn|nude|naked|penis|vagina|boob|breast|condom|rape|suicide|murder|cocaine|heroin|meth|marijuana|weed|beer|wine|vodka|whiskey|gun|rifle|pistol|nazi|hitler|kkk|terrorist|bomb)\b/i;
+const emojiMap={Water:'💧',Fire:'🔥',Earth:'🌍',Wind:'🌬️',Lava:'🌋',Dust:'🌫️',Steam:'💨',Plant:'🌱',Tree:'🌳',Stone:'🪨',Metal:'⚙️',Sword:'⚔️',Magic:'🔮',Crystal:'💎',Dragon:'🐉',Storm:'⛈️',Lightning:'⚡',Forest:'🌲',Mountain:'⛰️',River:'🏞️',Potion:'🧪',Armor:'🛡️'};
+const BOSSES=[
+ {name:'FROST WYRM',icon:'🐉',hp:650,weak:/fire|flame|lava|inferno|sun|solar/i,weakText:'🔥 Fire',armor:0},
+ {name:'STONE COLOSSUS',icon:'🗿',hp:950,weak:/water|tide|ocean|river|plant|forest|nature/i,weakText:'💧 Water / 🌿 Nature',armor:8},
+ {name:'SHADOW DRAKE',icon:'🐲',hp:1350,weak:/light|radiant|sun|solar|star|astral/i,weakText:'☀️ Light',armor:14},
+ {name:'TEMPEST TITAN',icon:'🌩️',hp:1850,weak:/earth|stone|rock|iron|metal/i,weakText:'🪨 Earth / ⚙️ Metal',armor:20},
+ {name:'ARCANE HYDRA',icon:'🐉',hp:2500,weak:/sword|blade|weapon|dragon|wyrm|drake/i,weakText:'⚔️ Blades / 🐉 Dragoncraft',armor:28},
+ {name:'VOID SOVEREIGN',icon:'👑',hp:3400,weak:/legendary|mythic|ancient|eternal|world|celestial|cosmic|dragonlord/i,weakText:'✨ Legendary creations',armor:38}
+];
+let recipes=new Map(), discovered=new Map(base), slots=[null,null], last=null, bossLevel=0, bossHp=BOSSES[0].hp, newFinds=Number(localStorage.getItem('dwForgeNewFinds')||0),forgeMaster=localStorage.getItem('dwForgeMaster')==='1';
+let meta=new Map([...base.keys()].map(n=>[n,{depth:0,rarity:'COMMON'}]));
+try{const saved=JSON.parse(localStorage.getItem('dwForgeCodex')||'[]');saved.forEach(x=>discovered.set(x[0],x[1]));const sm=JSON.parse(localStorage.getItem('dwForgeMeta')||'[]');sm.forEach(x=>meta.set(x[0],x[1]));bossLevel=Math.max(0,Math.min(BOSSES.length-1,+(localStorage.getItem('dwForgeBossLevel')||0)));bossHp=+(localStorage.getItem('dwForgeBossHp')||BOSSES[bossLevel].hp);if(bossHp<=0&&!forgeMaster)bossHp=BOSSES[bossLevel].hp}catch(e){}
+function key(a,b){return [a,b].sort((x,y)=>x.localeCompare(y)).join('|||')}
+function addRecipe(a,b,r,e){if(!bad.test(a+' '+b+' '+r))recipes.set(key(a,b),{name:r,emoji:e||emojiMap[r]||guessEmoji(r)})}
+function guessEmoji(n){const s=n.toLowerCase();if(s.includes('dragon')||s.includes('drake')||s.includes('wyrm'))return'🐉';if(s.includes('fire')||s.includes('flame')||s.includes('lava'))return'🔥';if(s.includes('smog')||s.includes('fog')||s.includes('smoke')||s.includes('ash cloud'))return'🌫️';if(s.includes('water')||s.includes('ocean')||s.includes('river'))return'💧';if(s.includes('ice')||s.includes('snow'))return'❄️';if(s.includes('storm')||s.includes('lightning'))return'⚡';if(s.includes('sword')||s.includes('blade'))return'⚔️';if(s.includes('armor')||s.includes('shield'))return'🛡️';if(s.includes('magic')||s.includes('spell')||s.includes('arcane'))return'✨';if(s.includes('plant')||s.includes('tree')||s.includes('forest'))return'🌿';if(s.includes('stone')||s.includes('rock'))return'🪨';return'🔹'}
+fallback.forEach(x=>addRecipe(...x));
+async function loadRemote(){const status=document.getElementById('datasetStatus');try{const res=await fetch(REMOTE,{cache:'force-cache'});if(!res.ok)throw Error(res.status);const d=await res.json();if(!d.items||!d.recipes)throw Error('format');let accepted=0;for(const row of d.recipes){const a=d.items[row[0]],b=d.items[row[1]],r=d.items[row[2]];if(a&&b&&r&&!bad.test(a+' '+b+' '+r)){recipes.set(key(a,b),{name:r,emoji:guessEmoji(r)});accepted++}}fallback.forEach(x=>addRecipe(...x));status.textContent='⚡ The Grand Archive is open: '+accepted.toLocaleString()+' school-ready recipes await.';}catch(e){console.warn('[Arcane Forge archive]',e);status.textContent='🐉 The Crafting Codex is ready. Simple ingredients make simple results; powerful discoveries require deeper chains.';} }
+function depthOf(n){return meta.get(n)?.depth ?? 1}
+function rarityFromDepth(depth,a='',b='',name=''){
+ const ar=meta.get(a)?.rarity||'COMMON', br=meta.get(b)?.rarity||'COMMON';
+ const rank={COMMON:0,RARE:1,EPIC:2,LEGENDARY:3};
+ const parent=Math.max(rank[ar]||0,rank[br]||0);
+ let tier=0;
+ if(depth>=4)tier=1;
+ if(depth>=7 && parent>=1)tier=2;
+ if(depth>=11 && parent>=2)tier=3;
+ // Curated endgame concepts may rise one tier, but never skip the depth gates.
+ if(/dragon|drake|wyrm|celestial|cosmic|legendary|crown|relic/i.test(name) && depth>=6)tier=Math.max(tier,2);
+ if(depth>=10 && /ancient|eternal|mythic|archmage|dragonlord/i.test(name))tier=3;
+ return ['COMMON','RARE','EPIC','LEGENDARY'][tier];
+}
+function rarity(name){return meta.get(name)?.rarity||rarityFromDepth(depthOf(name),'','',name)}
+function save(){localStorage.setItem('dwForgeCodex',JSON.stringify([...discovered]));localStorage.setItem('dwForgeMeta',JSON.stringify([...meta]));localStorage.setItem('dwForgeBossLevel',bossLevel);localStorage.setItem('dwForgeBossHp',bossHp);localStorage.setItem('dwForgeNewFinds',newFinds);localStorage.setItem('dwForgeMaster',forgeMaster?'1':'0')}
+function render(){const q=document.getElementById('search').value.toLowerCase();const box=document.getElementById('elements');box.innerHTML='';[...discovered].filter(([n])=>n.toLowerCase().includes(q)).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([n,e])=>{const d=document.createElement('div');d.className='element';d.innerHTML=`<span class="emoji">${e}</span><div><b>${n}</b><small>${rarity(n)} • DEPTH ${depthOf(n)}</small></div>`;d.onclick=()=>select(n,e);d.draggable=true;d.ondragstart=ev=>ev.dataTransfer.setData('text/plain',n);box.appendChild(d)});const b=BOSSES[bossLevel];document.getElementById('count').textContent=discovered.size;document.getElementById('hudCount').textContent=discovered.size;document.getElementById('firsts').textContent=newFinds;document.getElementById('bossName').textContent=b.name;if(!forgeMaster&&bossHp>0)document.getElementById('boss').textContent=b.icon;else if(forgeMaster)document.getElementById('boss').textContent='👑';document.getElementById('bossHp').textContent=(forgeMaster?'MASTERED':bossHp+' / '+b.hp+' HP');document.getElementById('bossHpMini').textContent=bossHp;document.getElementById('bossWeakness').textContent='Weakness: '+b.weakText;document.getElementById('bossLevelText').textContent='Level '+(bossLevel+1)+' of '+BOSSES.length;document.getElementById('hpfill').style.width=Math.max(0,Math.min(100,bossHp/b.hp*100))+'%';}
+function select(n,e){const i=!slots[0]?0:!slots[1]?1:0;slots[i]={name:n,emoji:e};drawSlots()}
+function drawSlots(){slots.forEach((s,i)=>{const el=document.getElementById('slot'+(i+1));el.classList.toggle('active',!!s);el.innerHTML=s?`<div><div class="big">${s.emoji}</div><b>${s.name}</b></div>`:'<span>Select an element</span>'});document.getElementById('combine').disabled=!(slots[0]&&slots[1])}
+function forgeGenerated(a,b){
+ const pair=[a,b].sort((x,y)=>x.localeCompare(y)), A=pair[0],B=pair[1], text=(A+' '+B).toLowerCase();
+ const d=Math.max(depthOf(A),depthOf(B))+1;
+ // Self-combinations intensify naturally instead of jumping to fantasy endgame loot.
+ if(A===B){const self={Smoke:['Smog','🌫️'],Smog:['Thick Fog','🌁'],Fire:['Blaze','🔥'],Water:['Pool','💧'],Wind:['Gust','🌬️'],Earth:['Hill','⛰️'],Magic:['Greater Magic','✨'],Storm:['Tempest','⛈️'],Ice:['Glacier','🧊'],Stone:['Boulder','🪨'],Plant:['Garden','🌿'],Tree:['Forest','🌲']};if(self[A])return{name:self[A][0],emoji:self[A][1],generated:true,depth:d};return{name:'Greater '+A,emoji:guessEmoji(A),generated:true,depth:d}}
+ const themes=[['fire','Flame','🔥'],['water','Tide','🌊'],['wind','Gale','🌪️'],['earth','Stone','🪨'],['ice','Frost','❄️'],['snow','Frost','❄️'],['lightning','Storm','⚡'],['thunder','Storm','⛈️'],['magic','Arcane','🔮'],['spell','Mystic','✨'],['dragon','Dragon','🐉'],['shadow','Shadow','🌑'],['dark','Night','🌙'],['light','Radiant','☀️'],['star','Astral','⭐'],['moon','Lunar','🌙'],['sun','Solar','☀️'],['plant','Wild','🌿'],['tree','Forest','🌲'],['metal','Iron','⚙️'],['sword','Blade','⚔️'],['forge','Forged','🔨'],['energy','Charged','💫']];
+ let theme=themes.find(t=>text.includes(t[0]))||['mixed','Mixed','✨'];
+ let hash=0;for(const c of(A+'|'+B))hash=((hash<<5)-hash+c.charCodeAt(0))|0;
+ const formsByDepth=d<=2?[['Mist','🌫️'],['Dust','🌫️'],['Pool','💧'],['Spark','✨'],['Mud','🟤'],['Breeze','🌬️'],['Stone','🪨']]:d<=4?[['Cloud','☁️'],['Crystal','💎'],['Herb','🌿'],['Shard','🔹'],['Rune','🔷'],['Ore','⚙️'],['Charm','🪬']]:d<=6?[['Relic','🧿'],['Orb','🔮'],['Blade','⚔️'],['Shield','🛡️'],['Spirit','👻'],['Beacon','💡'],['Guardian','🛡️']]:d<=9?[['Wyrm','🐲'],['Drake','🐉'],['Crown','👑'],['Titan','🗿'],['Phoenix','🦅'],['Tempest','🌩️'],['Aegis','🛡️']]:[['Dragon','🐉'],['Sovereign','👑'],['Mythic Relic','🧿'],['Worldblade','⚔️'],['Star Crown','👑'],['Ancient Wyrm','🐲']];
+ const form=formsByDepth[Math.abs(hash)%formsByDepth.length];
+ const clean=x=>x.replace(/^(Arcane|Mystic|Flame|Frost|Stone|Tide|Gale|Storm|Dragon|Shadow|Night|Radiant|Astral|Lunar|Solar|Wild|Forest|Iron|Forged|Charged|Greater|Mixed)\s+/i,'');
+ let root=clean((Math.abs(hash)%2?A:B));if(root.length>18)root=root.split(/\s+/).slice(0,2).join(' ');
+ let prefix=d<=2?'':theme[1]+' ';
+ let name=(prefix+root+' '+form[0]).replace(/\b(\w+)(\s+\1\b)+/gi,'$1').trim();if(name.length>42)name=(prefix+form[0]).trim();
+ return{name,emoji:form[1]||theme[2],generated:true,depth:d};
+}
+function combine(){const a=slots[0].name,b=slots[1].name;let hit=recipes.get(key(a,b));if(!hit){hit=forgeGenerated(a,b);recipes.set(key(a,b),hit)};const out=document.getElementById('result');last=hit;const fresh=!discovered.has(hit.name);const d=hit.depth||Math.max(depthOf(a),depthOf(b))+1;const rr=rarityFromDepth(d,a,b,hit.name);if(!meta.has(hit.name)||depthOf(hit.name)>d)meta.set(hit.name,{depth:d,rarity:rr});if(fresh){discovered.set(hit.name,hit.emoji);newFinds++;save();toast('✨ NEW DISCOVERY: '+hit.name+'!')}const r=rarity(hit.name);out.innerHTML=`<div class="re">${hit.emoji}</div><div class="rarity">${r} • DEPTH ${d}${fresh?' • NEW DISCOVERY':''}</div><h3>${hit.name}</h3><small>${a} + ${b}</small>`;out.classList.add('flash');setTimeout(()=>out.classList.remove('flash'),600);document.getElementById('attack').disabled=false;addRecent(hit,fresh);slots=[null,null];drawSlots();render()}
+function addRecent(hit,fresh){const d=document.createElement('div');d.className='discovery '+rarity(hit.name).toLowerCase();d.innerHTML=`<b>${hit.emoji} ${hit.name}</b><br><span class="rarity">${rarity(hit.name)}${fresh?' • FIRST TIME':''}</span>`;document.getElementById('recent').prepend(d);while(document.getElementById('recent').children.length>8)document.getElementById('recent').lastChild.remove()}
+function attack(){if(!last)return;const b=BOSSES[bossLevel],n=last.name.toLowerCase();let dmg=18+depthOf(last.name)*3;if(/sword|blade|weapon|lightning|storm|magic|spell/i.test(n))dmg+=18;if(rarity(last.name)==='RARE')dmg+=12;if(rarity(last.name)==='EPIC')dmg+=32;if(rarity(last.name)==='LEGENDARY')dmg+=70;if(b.weak.test(n))dmg=Math.round(dmg*1.8);dmg=Math.max(5,dmg-b.armor);bossHp=Math.max(0,bossHp-dmg);save();toast(`⚔️ ${last.name} hits ${b.name} for ${dmg} damage!`);if(bossHp===0){document.getElementById('boss').textContent='💥';document.getElementById('attack').disabled=true;if(bossLevel<BOSSES.length-1){const defeated=b.name;setTimeout(()=>{bossLevel++;bossHp=BOSSES[bossLevel].hp;last=null;save();document.getElementById('result').innerHTML=`<div class="re">🏆</div><h3>${defeated} DEFEATED!</h3><small>Level ${bossLevel+1} unlocked. The next boss is tougher and has more armor.</small>`;render()},900)}else{forgeMaster=true;save();document.getElementById('result').innerHTML='<div class="re">👑</div><h3>FORGE MASTER VICTORY COMPLETE!</h3><small>You defeated all six Dragonswood bosses. Keep crafting to expand your Codex.</small>';window.DWAudio?.positive?.();}}if(bossHp>0)render();else setTimeout(render,950)}
+function toast(t){const x=document.getElementById('toast');x.textContent=t;x.classList.add('show');setTimeout(()=>x.classList.remove('show'),1800)}
+document.getElementById('combine').onclick=combine;document.getElementById('attack').onclick=attack;document.getElementById('search').oninput=render;document.getElementById('clearSlots').onclick=()=>{slots=[null,null];last=null;drawSlots();document.getElementById('attack').disabled=true};
+for(const id of ['slot1','slot2']){const el=document.getElementById(id);el.ondragover=e=>e.preventDefault();el.ondrop=e=>{e.preventDefault();const n=e.dataTransfer.getData('text/plain');if(discovered.has(n)){const i=id==='slot1'?0:1;slots[i]={name:n,emoji:discovered.get(n)};drawSlots()}}}
+drawSlots();render();loadRemote();
+</script>
+<script id="dragonswood-sound-engine">
+(() => {
+  if (window.DWAudio) return;
+
+  const KEY = "dragonswoodSoundsEnabledV1";
+  let ctx = null;
+  let unlocked = false;
+  let enabled = localStorage.getItem(KEY) !== "off";
+  const lastPlayed = {positive:0, negative:0, bathroom:0, notice:0};
+
+  function getCtx(){
+    if(!enabled) return null;
+    try{
+      if(!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if(ctx.state === "suspended") ctx.resume();
+      unlocked = true;
+      updateBadge();
+      return ctx;
+    }catch(e){ return null; }
+  }
+
+  function tone(freq, start=0, duration=.16, type="sine", gain=.07){
+    const ac = getCtx();
+    if(!ac) return;
+    try{
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.type = type;
+      o.frequency.setValueAtTime(freq, ac.currentTime + start);
+      g.gain.setValueAtTime(.0001, ac.currentTime + start);
+      g.gain.exponentialRampToValueAtTime(gain, ac.currentTime + start + .015);
+      g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + start + duration);
+      o.connect(g); g.connect(ac.destination);
+      o.start(ac.currentTime + start);
+      o.stop(ac.currentTime + start + duration + .03);
+    }catch(e){}
+  }
+
+  function canPlay(kind, gap=220){
+    if(!enabled || !unlocked) return false;
+    const now = Date.now();
+    if(now - (lastPlayed[kind]||0) < gap) return false;
+    lastPlayed[kind] = now;
+    return true;
+  }
+
+  function positive(){
+    if(!canPlay("positive",260)) return;
+    tone(523.25,0,.13,"sine",.065);
+    tone(659.25,.09,.14,"sine",.07);
+    tone(783.99,.18,.22,"sine",.075);
+  }
+
+  function negative(){
+    if(!canPlay("negative",280)) return;
+    tone(233.08,0,.17,"triangle",.07);
+    tone(174.61,.14,.25,"triangle",.075);
+  }
+
+  function bathroom(){
+    if(!canPlay("bathroom",850)) return;
+    // Intentionally distinct from normal success/failure sounds.
+    tone(659.25,0,.18,"sine",.10);
+    tone(880,.20,.20,"sine",.115);
+    tone(659.25,.44,.30,"sine",.10);
+  }
+
+  function notice(){
+    if(!canPlay("notice",500)) return;
+    tone(523.25,0,.13,"sine",.06);
+    tone(783.99,.15,.22,"sine",.075);
+  }
+
+  function setEnabled(v){
+    enabled = !!v;
+    localStorage.setItem(KEY, enabled ? "on" : "off");
+    if(enabled) getCtx();
+    updateBadge();
+  }
+
+  let badge = null;
+  function updateBadge(){
+    if(!badge) return;
+    if(!enabled){
+      badge.textContent = "🔇 Sounds Off";
+      badge.dataset.state = "off";
+    }else if(unlocked){
+      badge.textContent = "🔔 Alerts Armed";
+      badge.dataset.state = "armed";
+    }else{
+      badge.textContent = "🔔 Click to Arm Sounds";
+      badge.dataset.state = "locked";
+    }
+  }
+
+  function addTeacherBadge(){
+    if(!document.body || document.getElementById("dwSoundBadge")) return;
+    badge = document.createElement("button");
+    badge.id = "dwSoundBadge";
+    badge.type = "button";
+    badge.setAttribute("aria-label","Toggle Dragonswood sounds");
+    Object.assign(badge.style,{
+      position:"fixed", right:"14px", bottom:"14px", zIndex:"99999",
+      border:"1px solid rgba(255,220,105,.85)", borderRadius:"999px",
+      padding:"9px 13px", fontWeight:"900", cursor:"pointer",
+      color:"#fff7cc", background:"linear-gradient(90deg,#632fc4,#087da1)",
+      boxShadow:"0 6px 20px rgba(0,0,0,.35)", fontSize:"13px"
+    });
+    badge.onclick = (e) => {
+      e.preventDefault(); e.stopPropagation();
+      if(enabled && unlocked) setEnabled(false);
+      else setEnabled(true);
+    };
+    document.body.appendChild(badge);
+    updateBadge();
+  }
+
+  // Browsers require one user gesture before background-tab audio is permitted.
+  ["pointerdown","keydown","touchstart"].forEach(ev=>{
+    window.addEventListener(ev,()=>{ if(enabled) getCtx(); },{passive:true});
+  });
+
+  window.DWAudio = {
+    positive, negative, bathroom, notice, unlock:getCtx,
+    setEnabled, isEnabled:()=>enabled, isUnlocked:()=>unlocked,
+    addTeacherBadge
+  };
+})();
+</script>
+
+
+<script id="dragonswood-feedback-sounds">
+(() => {
+  if(window.__dwFeedbackSoundsInstalled) return;
+  window.__dwFeedbackSoundsInstalled = true;
+
+  const last = new WeakMap();
+  const good = /\b(correct|success|successful|great|excellent|earned|awarded|approved|saved|complete|completed|victory|won|win|level up|leveled up|unlocked|purchased|perfect|nice work|well done|sent to mr\. evans|back in class)\b/i;
+  const bad  = /\b(wrong|incorrect|failed|failure|denied|dismissed|banned|blocked|could not|can't|cannot|not enough|try again|lost|defeat|error|permission[- ]denied)\b/i;
+
+  function candidate(el){
+    if(!(el instanceof Element)) return null;
+    return el.closest(
+      '.feedback,.status,.message,.notice,.toast,.result,.alert,' +
+      '[id*="feedback" i],[id*="status" i],[id*="message" i],[id*="result" i]'
+    );
+  }
+
+  function inspect(el){
+    const box = candidate(el);
+    if(!box) return;
+    const text = (box.innerText || box.textContent || "").trim();
+    if(!text || last.get(box) === text) return;
+    last.set(box,text);
+    if(bad.test(text)) window.DWAudio?.negative();
+    else if(good.test(text)) window.DWAudio?.positive();
+  }
+
+  const obs = new MutationObserver(records=>{
+    for(const r of records){
+      inspect(r.target instanceof Element ? r.target : r.target.parentElement);
+      for(const n of r.addedNodes || []) if(n instanceof Element) inspect(n);
+    }
+  });
+
+  function start(){
+    if(!document.body) return;
+    obs.observe(document.body,{subtree:true,childList:true,characterData:true});
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",start,{once:true});
+  else start();
+})();
+</script>
+
+<script src="narration-manifest.js?v=59.0.0"></script><script src="dragonswood-narrator.js?v=59.0.0"></script><script src="dragonswood-grayson-mode.js?v=58.0"></script></body></html>

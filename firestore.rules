@@ -1,0 +1,1545 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isTeacher() {
+      return request.auth != null
+        && request.auth.token.email == "jacobicusjax@gmail.com";
+    }
+
+    function isTester() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/testerAccounts/$(request.auth.uid))
+        && get(/databases/$(database)/documents/testerAccounts/$(request.auth.uid)).data.active == true;
+    }
+
+    function testerCapability(name) {
+      return isTester()
+        && get(/databases/$(database)/documents/testerAccounts/$(request.auth.uid)).data.get('capabilities', {}).get(name, false) == true;
+    }
+
+    function testerSelfUnlock(field, capability) {
+      return testerCapability(capability)
+        && exists(/databases/$(database)/documents/testerSelfControls/$(request.auth.uid))
+        && get(/databases/$(database)/documents/testerSelfControls/$(request.auth.uid)).data.get(field, false) == true;
+    }
+
+    function isExploreStudent() {
+      return request.auth != null
+        && (
+          (
+            request.auth.token.email != null
+            && request.auth.token.email.matches('.*@explore[.]academy$')
+          )
+          // Teacher-approved outside accounts must be able to exercise the
+          // same guarded student paths during testing.
+          || isTester()
+        );
+    }
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function readingSettings() {
+      return get(/databases/$(database)/documents/classData/gradebookSettings).data;
+    }
+
+    function readingTargets() {
+      return readingSettings().get('readingTargetsByDate', {});
+    }
+
+    function hasReadingAssignment(dateKey) {
+      return (
+          readingTargets().keys().hasAny([dateKey])
+          && readingTargets()[dateKey] is number
+          && readingTargets()[dateKey] >= 1
+          && readingTargets()[dateKey] <= 180
+        ) || (
+          readingSettings().get('readingAssignedDateKeys', []).hasAny([dateKey])
+          && readingSettings().get('readingTargetMinutes', 20) is number
+          && readingSettings().get('readingTargetMinutes', 20) >= 1
+          && readingSettings().get('readingTargetMinutes', 20) <= 180
+        );
+    }
+
+    function readingTargetMinutes(dateKey) {
+      return readingTargets().keys().hasAny([dateKey])
+        ? readingTargets()[dateKey]
+        : readingSettings().get('readingTargetMinutes', 20);
+    }
+
+    function validReadingPages(data) {
+      return data.firstPage is int
+        && data.lastPage is int
+        && data.firstPage >= 1
+        && data.lastPage <= 5000
+        && data.firstPage <= data.lastPage
+        && data.pages is list
+        && data.pages.size() >= 1
+        && data.pages.size() <= 2
+        && data.pages.hasOnly([data.firstPage, data.lastPage])
+        && data.pages.hasAll([data.firstPage, data.lastPage]);
+    }
+
+    function validReadingStatus(data) {
+      return (
+          data.activeSeconds >= readingTargetMinutes(data.dateKey) * 60
+          && data.status == 'complete'
+        ) || (
+          data.activeSeconds < readingTargetMinutes(data.dateKey) * 60
+          && data.status == 'in-progress'
+        );
+    }
+
+    function arcadeScoreId(data) {
+      return request.auth.uid + '__' + data.periodType + '__' + data.periodKey + '__' + data.boardId;
+    }
+
+    function arcadeEnabled(uid) {
+      return (
+          exists(/databases/$(database)/documents/arcadeAccess/$(uid))
+          && (get(/databases/$(database)/documents/arcadeAccess/$(uid)).data.keys().hasAny(['individualEnabled'])
+            ? get(/databases/$(database)/documents/arcadeAccess/$(uid)).data.individualEnabled == true
+            : exists(/databases/$(database)/documents/arcadeSettings/classAccess)
+              && get(/databases/$(database)/documents/arcadeSettings/classAccess).data.enabled == true)
+        ) || (
+          request.auth != null
+          && request.auth.uid == uid
+          && testerSelfUnlock('unlockArcade', 'selfUnlockArcade')
+        );
+    }
+
+    function hasLiveArcadeSession(uid, sessionId) {
+      return sessionId is string
+        && exists(/databases/$(database)/documents/arcadeSessions/$(sessionId))
+        && get(/databases/$(database)/documents/arcadeSessions/$(sessionId)).data.uid == uid
+        && get(/databases/$(database)/documents/arcadeSessions/$(sessionId)).data.status == 'active'
+        && get(/databases/$(database)/documents/arcadeSessions/$(sessionId)).data.endAt > request.time
+        && get(/databases/$(database)/documents/arcadeAccess/$(uid)).data.currentSessionId == sessionId
+        && arcadeEnabled(uid);
+    }
+
+    function validArcadeScore(data) {
+      return data.keys().hasOnly([
+          'uid','studentKey','displayName','gameId','boardId','periodType',
+          'periodKey','score','metric','details','schemaVersion','sessionId','updatedAt'
+        ])
+        && data.uid == request.auth.uid
+        && data.studentKey is string
+        && data.studentKey.size() <= 100
+        && data.displayName is string
+        && data.displayName.size() > 0
+        && data.displayName.size() <= 32
+        && data.gameId in ['dragon-dash','void-runner']
+        && data.boardId in ['dragon-dash','void-runner-explore','void-runner-infinite']
+        && data.periodType in ['daily','weekly','allTime']
+        && data.periodKey is string
+        && data.periodKey.size() <= 20
+        && data.score is int
+        && data.score >= 0
+        && data.score <= 1000000000000
+        && data.metric is string
+        && data.metric.size() <= 100
+        && data.details is map
+        && data.details.keys().size() <= 30
+        && data.schemaVersion == 2
+        && data.updatedAt == request.time
+        && hasLiveArcadeSession(request.auth.uid, data.sessionId);
+    }
+
+    // A student may have only one pending extra-pass request across every
+    // pass type. The exceptType record is the one being created or refreshed.
+    function hasNoOtherPendingExtraPass(uid, dateKey, exceptType) {
+      return (exceptType == 'bathroom'
+              || !exists(/databases/$(database)/documents/bathroomRequests/$(uid + '_' + dateKey))
+              || get(/databases/$(database)/documents/bathroomRequests/$(uid + '_' + dateKey)).data.status != 'pending')
+          && (exceptType == 'snack'
+              || !exists(/databases/$(database)/documents/snackRequests/$(uid + '_' + dateKey))
+              || get(/databases/$(database)/documents/snackRequests/$(uid + '_' + dateKey)).data.status != 'pending')
+          && (exceptType == 'outOfSeat'
+              || !exists(/databases/$(database)/documents/passRequests/$(uid + '_outOfSeat_' + dateKey))
+              || get(/databases/$(database)/documents/passRequests/$(uid + '_outOfSeat_' + dateKey)).data.status != 'pending')
+          && (exceptType == 'office'
+              || !exists(/databases/$(database)/documents/passRequests/$(uid + '_office_' + dateKey))
+              || get(/databases/$(database)/documents/passRequests/$(uid + '_office_' + dateKey)).data.status != 'pending');
+    }
+
+    function substituteModeAllowsPasses() {
+      return !exists(/databases/$(database)/documents/classData/substituteMode)
+        || get(/databases/$(database)/documents/classData/substituteMode).data.active != true
+        || (
+          get(/databases/$(database)/documents/classData/substituteMode).data.get('expiresAt', null) is timestamp
+          && get(/databases/$(database)/documents/classData/substituteMode).data.expiresAt <= request.time
+        );
+    }
+
+    // Seating Command is teacher-only. Student presentation is rendered from
+    // the authenticated teacher page and never reads these private rules.
+    match /classrooms/{classroomId}/seatingPlans/{planId} {
+      allow read, write: if isTeacher();
+    }
+
+    match /classrooms/{classroomId}/seatingHistory/{historyId} {
+      allow read, write: if isTeacher();
+    }
+
+    match /classData/{docId} {
+      allow read: if true;
+
+      // A rare Daily Boss chest may add exactly 25 points to the Class Pet or
+      // Field Trip goal. The award is validated against the loot document
+      // written in the same batch, so it cannot be claimed on its own.
+      allow update: if isExploreStudent()
+                    && (docId == 'classPet' || docId == 'fieldTrip')
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['points','goal','lastLootId','updatedAt'])
+                    && request.resource.data.points is number
+                    && request.resource.data.points == resource.data.get('points',0) + 25
+                    && request.resource.data.lastLootId is string
+                    && request.resource.data.lastLootId != resource.data.get('lastLootId','')
+                    && getAfter(/databases/$(database)/documents/bossLoot/$(request.resource.data.lastLootId)).data.studentId == request.auth.uid
+                    && getAfter(/databases/$(database)/documents/bossLoot/$(request.resource.data.lastLootId)).data.rareGoal == docId
+                    && getAfter(/databases/$(database)/documents/bossLoot/$(request.resource.data.lastLootId)).data.goalPoints == 25;
+
+      allow write: if isTeacher();
+    }
+
+    // Teacher Attention is teacher-authored. A student can only acknowledge
+    // the current message in their own deterministic event document.
+    match /teacherAttentionEvents/{eventId} {
+      allow read: if isTeacher()
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+      allow create, update: if isExploreStudent()
+                            && request.resource.data.studentId == request.auth.uid
+                            && request.resource.data.type == 'acknowledged'
+                            && request.resource.data.attentionId is string
+                            && eventId == request.resource.data.attentionId + '_' + request.auth.uid
+                            && request.resource.data.keys().hasOnly([
+                              'attentionId','type','studentId','studentName','dateKey',
+                              'destination','createdAt','updatedAt'
+                            ]);
+      allow create, update: if isTeacher();
+      allow delete: if false;
+    }
+
+    match /rewards/{rewardId} {
+      allow read: if true;
+      allow write: if isTeacher();
+    }
+
+    match /students/{studentId} {
+      allow read: if isTeacher() || isOwner(studentId);
+
+      allow create: if (isExploreStudent() || isTester())
+                    && isOwner(studentId)
+                    && request.resource.data.hp == 10
+                    && request.resource.data.gold == 0
+                    && request.resource.data.xp == 0;
+
+      allow update: if isOwner(studentId)
+                    && isExploreStudent()
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['title','avatar','avatarConfig','equipped','homeBackgroundId','narrationVoice','updatedAt'])
+                    && request.resource.data.get('narrationVoice','automatic') in [
+                      'automatic','us-brian','gb-lewis','us-liam','us-bella','es-alex'
+                    ]
+                    && request.resource.data.get('homeBackgroundId','fairy-purple') in [
+                      'fairy-purple','fairy-bamboo','fairy-mushroom','crystal-cave',
+                      'jungle','mountain-night','snow-aurora','snow-village'
+                    ];
+
+      allow update: if isOwner(studentId)
+                    && isExploreStudent()
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['gold','updatedAt'])
+                    && request.resource.data.gold is number
+                    && request.resource.data.gold >= 0
+                    && request.resource.data.gold <= resource.data.gold;
+
+      allow update: if isOwner(studentId)
+                    && isExploreStudent()
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['gold','inventory','updatedAt'])
+                    && request.resource.data.gold is number
+                    && request.resource.data.gold >= 0
+                    && request.resource.data.gold <= resource.data.gold
+                    && request.resource.data.inventory is list
+                    && resource.data.get('inventory', []) is list
+                    && request.resource.data.inventory.size()
+                       == resource.data.get('inventory', []).size() + 1
+                    && request.resource.data.inventory.hasAll(resource.data.get('inventory', []));
+
+      // Academic game reward. Knocked-out players cannot receive XP or Gold.
+      allow update: if isOwner(studentId)
+                    && isExploreStudent()
+                    && resource.data.hp > 0
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['xp','gold','dailyXpDate','dailyXpEarned','dailyGoldEarned','dailyGoldWindowStartedAt','lastGameClaimId',
+                                'bossWins','lastBossWinDate','rpgInventory','eggInventory','updatedAt'])
+                    // Daily Boss adds win bookkeeping and may drop one item or one egg.
+                    && request.resource.data.get('bossWins',0) is number
+                    && request.resource.data.get('bossWins',0) <= resource.data.get('bossWins',0) + 1
+                    && request.resource.data.get('rpgInventory',[]).size()
+                       <= resource.data.get('rpgInventory',[]).size() + 1
+                    && request.resource.data.get('rpgInventory',[])
+                       .hasAll(resource.data.get('rpgInventory',[]))
+                    && request.resource.data.get('eggInventory',0)
+                       <= resource.data.get('eggInventory',0) + 1
+                    && request.resource.data.lastGameClaimId is string
+                    && request.resource.data.dailyXpDate is string
+                    && request.resource.data.dailyXpEarned is number
+                    && request.resource.data.dailyXpEarned >= 0
+                    && request.resource.data.dailyXpEarned <= 150
+                    // DW AUDIT FIX V57.1.9: Gold uses a server-time rolling 24-hour counter. A client-supplied dateKey cannot reset it.
+                    && request.resource.data.dailyGoldEarned is number
+                    && request.resource.data.dailyGoldEarned >= 0
+                    && request.resource.data.dailyGoldEarned <= 30
+                    && request.resource.data.dailyGoldWindowStartedAt is timestamp
+                    && (
+                         (
+                           ('dailyGoldWindowStartedAt' in resource.data)
+                           && resource.data.dailyGoldWindowStartedAt is timestamp
+                           && request.time < resource.data.dailyGoldWindowStartedAt + duration.value(24, 'h')
+                           && request.resource.data.dailyGoldWindowStartedAt == resource.data.dailyGoldWindowStartedAt
+                           && request.resource.data.dailyGoldEarned
+                              == resource.data.get('dailyGoldEarned',0)
+                                 + getAfter(/databases/$(database)/documents/gameResults/$(request.resource.data.lastGameClaimId)).data.goldAward
+                         )
+                         || (
+                           !('dailyGoldWindowStartedAt' in resource.data)
+                           && request.resource.data.dailyGoldWindowStartedAt == request.time
+                           && request.resource.data.dailyGoldEarned
+                              == getAfter(/databases/$(database)/documents/gameResults/$(request.resource.data.lastGameClaimId)).data.goldAward
+                         )
+                         || (
+                           ('dailyGoldWindowStartedAt' in resource.data)
+                           && resource.data.dailyGoldWindowStartedAt is timestamp
+                           && request.time >= resource.data.dailyGoldWindowStartedAt + duration.value(24, 'h')
+                           && request.resource.data.dailyGoldWindowStartedAt == request.time
+                           && request.resource.data.dailyGoldEarned
+                              == getAfter(/databases/$(database)/documents/gameResults/$(request.resource.data.lastGameClaimId)).data.goldAward
+                         )
+                       )
+                    && getAfter(/databases/$(database)/documents/gameResults/$(request.resource.data.lastGameClaimId)).data.studentId == request.auth.uid
+                    && getAfter(/databases/$(database)/documents/gameResults/$(request.resource.data.lastGameClaimId)).data.status == "complete"
+                    && getAfter(/databases/$(database)/documents/gameResults/$(request.resource.data.lastGameClaimId)).data.xpAward is number
+                    && getAfter(/databases/$(database)/documents/gameResults/$(request.resource.data.lastGameClaimId)).data.xpAward >= 0
+                    && getAfter(/databases/$(database)/documents/gameResults/$(request.resource.data.lastGameClaimId)).data.xpAward <= 12
+                    && getAfter(/databases/$(database)/documents/gameResults/$(request.resource.data.lastGameClaimId)).data.goldAward is number
+                    && getAfter(/databases/$(database)/documents/gameResults/$(request.resource.data.lastGameClaimId)).data.goldAward >= 0
+                    && getAfter(/databases/$(database)/documents/gameResults/$(request.resource.data.lastGameClaimId)).data.goldAward <= 3
+                    && request.resource.data.xp
+                       == resource.data.xp
+                          + getAfter(/databases/$(database)/documents/gameResults/$(request.resource.data.lastGameClaimId)).data.xpAward
+                    && request.resource.data.dailyXpEarned
+                       == (
+                            request.resource.data.dailyXpDate == resource.data.get('dailyXpDate','')
+                            ? resource.data.get('dailyXpEarned',0)
+                            : 0
+                          )
+                          + getAfter(/databases/$(database)/documents/gameResults/$(request.resource.data.lastGameClaimId)).data.xpAward
+                    && request.resource.data.gold
+                       == resource.data.gold
+                          + getAfter(/databases/$(database)/documents/gameResults/$(request.resource.data.lastGameClaimId)).data.goldAward;
+
+      // ---------------- v56 RPG progression ----------------
+      // Each path is deliberately narrow. A student may spend, equip and hatch,
+      // but may never mint Gold, XP, items or pets out of nothing.
+
+      // Choose a class. One time only: it must be unset before this write.
+      allow update: if isOwner(studentId)
+                    && isExploreStudent()
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['classId','classChosenAt','updatedAt'])
+                    && resource.data.get('classId','') == ''
+                    && request.resource.data.classId in ['warrior','ranger','mage','healer'];
+
+      // Active testers may reset only their own class choice for repeated Hall QA.
+      allow update: if isOwner(studentId)
+                    && isTester()
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['classId','classChosenAt','classResetAt','classResetBy','updatedAt'])
+                    && request.resource.data.classId == ''
+                    && request.resource.data.classChosenAt == null
+                    && request.resource.data.classResetBy == request.auth.uid
+                    && request.resource.data.classResetAt == request.time
+                    && request.resource.data.updatedAt == request.time;
+
+      // V5 character beta: one explicitly named account may select, reselect,
+      // or roll back. Legacy class/equipment fields are intentionally excluded.
+      allow update: if isOwner(studentId)
+                    && request.auth.token.email == 'jacobicusjax@gmail.com'
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['characterSystemVersion','characterV5Gender','characterV5Affinity','characterV5ClassId','characterV5SkinTone','characterV5HairColor','characterV5SelectedAt','updatedAt'])
+                    && request.resource.data.updatedAt == request.time
+                    && (
+                      (
+                        request.resource.data.characterSystemVersion == 'v5'
+                        && request.resource.data.characterV5Gender in ['male','female']
+                        && request.resource.data.characterV5Affinity in ['radiant','shadow']
+                        && request.resource.data.characterV5ClassId in ['warrior','ranger','mage','healer']
+                        && request.resource.data.characterV5SkinTone in ['light','medium','deep']
+                        && request.resource.data.characterV5HairColor in ['dark','brown','silver']
+                        && request.resource.data.characterV5SelectedAt == request.time
+                      )
+                      || (
+                        request.resource.data.characterSystemVersion in ['','legacy']
+                        && request.resource.data.characterV5Gender == ''
+                        && request.resource.data.characterV5Affinity == ''
+                        && request.resource.data.characterV5ClassId == ''
+                        && request.resource.data.characterV5SkinTone == ''
+                        && request.resource.data.characterV5HairColor == ''
+                        && request.resource.data.characterV5SelectedAt == null
+                      )
+                    );
+
+      // Buy from the Class Shop. Gold must actually go down; inventory grows by
+      // at most one entry, and nothing already owned may disappear.
+      allow update: if isOwner(studentId)
+                    && isExploreStudent()
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['gold','rpgInventory','eggInventory','lastRpgPurchaseId','updatedAt'])
+                    && request.resource.data.gold is number
+                    && request.resource.data.gold >= 0
+                    && request.resource.data.gold < resource.data.gold
+                    && request.resource.data.get('rpgInventory',[]) is list
+                    && request.resource.data.get('rpgInventory',[]).size()
+                       <= resource.data.get('rpgInventory',[]).size() + 1
+                    && request.resource.data.get('rpgInventory',[])
+                       .hasAll(resource.data.get('rpgInventory',[]))
+                    && request.resource.data.get('eggInventory',0) is number
+                    && request.resource.data.get('eggInventory',0) >= 0
+                    && request.resource.data.get('eggInventory',0)
+                       <= resource.data.get('eggInventory',0) + 1
+                    && request.resource.data.lastRpgPurchaseId is string
+                    && getAfter(/databases/$(database)/documents/rpgPurchases/$(request.resource.data.lastRpgPurchaseId)).data.studentId == request.auth.uid
+                    && getAfter(/databases/$(database)/documents/rpgPurchases/$(request.resource.data.lastRpgPurchaseId)).data.cost
+                       == resource.data.gold - request.resource.data.gold;
+
+      // Equip gear and pick the one active companion.
+      // The active pet must be one the student already owns.
+      allow update: if isOwner(studentId)
+                    && isExploreStudent()
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['rpgEquipped','activePet','updatedAt'])
+                    && (
+                         request.resource.data.get('activePet','') == ''
+                         || resource.data.get('ownedPets',[])
+                            .hasAny([request.resource.data.get('activePet','')])
+                       );
+
+      // Hatch an egg. Costs exactly one egg. A new companion is added once;
+      // a repeated companion preserves the bestiary and grants one Pet Token.
+      allow update: if isOwner(studentId)
+                    && isExploreStudent()
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['eggInventory','ownedPets','petTokens','lastHatchedPet','activePet','updatedAt'])
+                    && request.resource.data.eggInventory is number
+                    && request.resource.data.eggInventory >= 0
+                    && request.resource.data.eggInventory == resource.data.get('eggInventory',0) - 1
+                    && request.resource.data.ownedPets is list
+                    && request.resource.data.ownedPets.hasAll(resource.data.get('ownedPets',[]))
+                    && request.resource.data.lastHatchedPet is string
+                    && request.resource.data.ownedPets.hasAny([request.resource.data.lastHatchedPet])
+                    && request.resource.data.petTokens is number
+                    && request.resource.data.petTokens >= 0
+                    && (
+                         (
+                           request.resource.data.ownedPets.size() == resource.data.get('ownedPets',[]).size() + 1
+                           && !resource.data.get('ownedPets',[]).hasAny([request.resource.data.lastHatchedPet])
+                           && request.resource.data.petTokens == resource.data.get('petTokens',0)
+                         )
+                         ||
+                         (
+                           request.resource.data.ownedPets.size() == resource.data.get('ownedPets',[]).size()
+                           && resource.data.get('ownedPets',[]).hasAny([request.resource.data.lastHatchedPet])
+                           && request.resource.data.petTokens == resource.data.get('petTokens',0) + 1
+                         )
+                       )
+                    && (
+                         request.resource.data.get('activePet','') == resource.data.get('activePet','')
+                         || (
+                           resource.data.get('activePet','') == ''
+                           && request.resource.data.get('activePet','') == request.resource.data.lastHatchedPet
+                         )
+                       );
+
+      // Midnight fresh start. Clears all eligibility bans, as requested.
+      allow update: if isOwner(studentId)
+                    && isExploreStudent()
+                    && resource.data.hp == 0
+                    && resource.data.nextAutoReviveAt is timestamp
+                    && request.time >= resource.data.nextAutoReviveAt
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['hp','recessBlocked','fieldTripBlocked','knockoutReason','nextAutoReviveAt','lastAutoReviveAt','updatedAt'])
+                    && request.resource.data.hp == 1
+                    && request.resource.data.recessBlocked == false
+                    && request.resource.data.fieldTripBlocked == false;
+
+      allow update, delete: if isTeacher();
+    }
+
+
+    // Curriculum activity validator safety valve.
+    // Students can request review of their own rejected work; only the teacher can resolve requests.
+    match /curriculumOverrideRequests/{requestId} {
+      allow read: if isTeacher()
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+
+      allow create: if (isExploreStudent() || isTester())
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.status == "pending"
+                    && request.resource.data.lessonId is string
+                    && request.resource.data.studentAnswer is string
+                    && request.resource.data.studentAnswer.size() <= 5000;
+
+      // The deterministic document may be reused for that exact question.
+      // Only student-answer/request fields can change; rapid clicks stay in
+      // one record and cannot touch the teacher's decision or notes.
+      allow update: if (isExploreStudent() || isTester())
+                    && resource.data.studentId == request.auth.uid
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.status == "pending"
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['studentAnswer','attempts','revisionAttempts','status','validatorCode','validatorMessage',
+                                   'aiDecision','aiConfidence','aiReason','aiModel','aiPolicyVersion','aiCached',
+                                   'strongRetryUsed','strongRetryDecision','strongRetryConfidence','escalationReason',
+                                   'gradingPolicyVersion','requestedAt','updatedAt']);
+
+      allow update, delete: if isTeacher();
+    }
+
+    match /leaderboardProfiles/{studentId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isTeacher();
+    }
+
+    match /scores/{scoreId} {
+      allow read: if true;
+      // DW AUDIT FIX V57.1.9: leaderboard writes require an authorized Explore/tester student and self ownership.
+      allow create: if isExploreStudent()
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.score is number
+                    && request.resource.data.score >= 0
+                    && request.resource.data.score <= 100000;
+      allow update, delete: if isTeacher();
+    }
+
+    match /gameResults/{resultId} {
+      // DW AUDIT FIX V57.1.9: only live games, owner-prefixed claim IDs, bounded rewards and known fields.
+      allow create: if isExploreStudent()
+                    && request.resource.data.studentId == request.auth.uid
+                    && resultId.matches('^' + request.auth.uid + '_.*$')
+                    && request.resource.data.gameId in [
+                      'daily_quest','daily_boss','fraction_forge',
+                      'long_division_quest','math_operations_quest'
+                    ]
+                    && request.resource.data.keys().hasOnly([
+                      'studentId','studentEmail','displayName','gameId','gameName','status','dateKey',
+                      'day','track','trackName','session','score','accuracy','seconds','mathSkill','elaSkill','summary',
+                      'problemsSolved','roundSolved','round','roundScore','hintsUsed','totalAttempts','correctAttempts',
+                      'practiceMode','difficulty','questPointMultiplier','selectedOperation','operationCounts','operation',
+                      'missionXp','runId','knockedOut','xpAward','goldAward','createdAt'
+                    ])
+                    && request.resource.data.status == "complete"
+                    && request.resource.data.dateKey is string
+                    && request.resource.data.xpAward is number
+                    && request.resource.data.xpAward >= 0
+                    && request.resource.data.xpAward <= 12
+                    && request.resource.data.goldAward is number
+                    && request.resource.data.goldAward >= 0
+                    && request.resource.data.goldAward <= 3
+                    && request.resource.data.createdAt == request.time
+                    && (
+                      get(/databases/$(database)/documents/students/$(request.auth.uid)).data.hp > 0
+                      || (request.resource.data.gameId == "daily_quest"
+                          && request.resource.data.xpAward == 0
+                          && request.resource.data.goldAward == 0)
+                    );
+
+      allow read: if isTeacher()
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+      allow update, delete: if isTeacher();
+    }
+
+    // Rune Spelling evidence is validated and written by the academic callable.
+    // Browsers can read only their own rows and cannot forge gradebook results.
+    match /spellingResults/{resultId} {
+      allow read: if isTeacher()
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+      allow write: if false;
+    }
+
+    // 182 Daily Quests:
+    // Teacher can seed/read all.
+    // Students can read ONLY while Firestore server time is inside that day's window.
+    match /dailyQuests/{questDate} {
+      allow read: if isTeacher()
+                  || testerSelfUnlock('unlockMorning', 'selfUnlockMorning')
+                  || (
+                    (isExploreStudent() || isTester())
+                    && request.time >= resource.data.unlockAt
+                    && request.time < resource.data.lockAt
+                  );
+      allow create, update, delete: if isTeacher();
+    }
+
+
+    match /dailyQuestProgress/{progressId} {
+      allow read: if isTeacher()
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+
+      allow create: if isExploreStudent()
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.session in ["morning","exit"]
+                    && request.resource.data.status in ["in_progress","complete"]
+                    && request.resource.data.score is number
+                    && request.resource.data.score >= 0
+                    && request.resource.data.score <= 100000
+                    && request.resource.data.correct is number
+                    && request.resource.data.correct >= 0
+                    && request.resource.data.attempts is number
+                    && request.resource.data.attempts >= 0
+                    && request.resource.data.attempts <= 60
+                    && request.resource.data.correct <= request.resource.data.attempts
+                    && request.resource.data.score <= request.resource.data.correct * 150
+                    && (!('activeSeconds' in request.resource.data) || (request.resource.data.activeSeconds is number && request.resource.data.activeSeconds >= 0 && request.resource.data.activeSeconds <= 14400))
+                    && (!('idleEvents' in request.resource.data) || (request.resource.data.idleEvents is number && request.resource.data.idleEvents >= 0 && request.resource.data.idleEvents <= 100))
+                    && (!('perQuestionSeconds' in request.resource.data) || (request.resource.data.perQuestionSeconds is list && request.resource.data.perQuestionSeconds.size() <= 60))
+                    && (!('needsReteach' in request.resource.data) || (request.resource.data.needsReteach is list && request.resource.data.needsReteach.size() <= 60));
+
+      allow update: if (isExploreStudent() || isTester())
+                    && resource.data.studentId == request.auth.uid
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.session == resource.data.session
+                    && request.resource.data.dateKey == resource.data.dateKey
+                    && request.resource.data.day == resource.data.day
+                    && request.resource.data.status in ["in_progress","complete"]
+                    && request.resource.data.score is number
+                    && request.resource.data.score >= 0
+                    && request.resource.data.score <= 100000
+                    && request.resource.data.correct is number
+                    && request.resource.data.correct >= 0
+                    && request.resource.data.attempts is number
+                    && request.resource.data.attempts >= 0
+                    && request.resource.data.attempts <= 60
+                    && request.resource.data.correct <= request.resource.data.attempts
+                    && request.resource.data.score <= request.resource.data.correct * 150
+                    && (!('activeSeconds' in request.resource.data) || (request.resource.data.activeSeconds is number && request.resource.data.activeSeconds >= 0 && request.resource.data.activeSeconds <= 14400))
+                    && (!('idleEvents' in request.resource.data) || (request.resource.data.idleEvents is number && request.resource.data.idleEvents >= 0 && request.resource.data.idleEvents <= 100))
+                    && (!('perQuestionSeconds' in request.resource.data) || (request.resource.data.perQuestionSeconds is list && request.resource.data.perQuestionSeconds.size() <= 60))
+                    && (!('needsReteach' in request.resource.data) || (request.resource.data.needsReteach is list && request.resource.data.needsReteach.size() <= 60));
+
+      allow delete: if isTeacher();
+    }
+
+    // Imported i-Ready placement records contain private student assessment data.
+    // Only teachers may read or write this collection.
+    match /iReadyResults/{resultId} {
+      allow read, create, update, delete: if isTeacher();
+    }
+
+    // Detailed placement evidence is private teacher data. Students may submit
+    // only their own completed report, but cannot read placement or deficit data.
+    match /placementReports/{studentId} {
+      allow read, delete: if isTeacher();
+      allow create, update: if (isExploreStudent() || isTester())
+                            && isOwner(studentId)
+                            && request.resource.data.studentId == studentId
+                            && request.resource.data.studentVisible == false
+                            && request.resource.data.version == 'math-ela-adaptive-placement-v2'
+                            && request.resource.data.enrolledGrade in [4, 5]
+                            && request.resource.data.math is map
+                            && request.resource.data.ela is map
+                            && request.resource.data.math.placement in ['foundation','4','5','6']
+                            && request.resource.data.ela.placement in ['foundation','4','5','6'];
+    }
+
+    // Curriculum Quest is cached locally for immediate/offline use and mirrored
+    // here so Chromebook or browser-profile resets do not erase academic work.
+    match /curriculumQuestProgress/{studentId} {
+      allow read: if isTeacher() || isOwner(studentId);
+
+      allow create, update: if isExploreStudent()
+                            && isOwner(studentId)
+                            && request.resource.data.studentId == studentId
+                            && request.resource.data.grade in ["I", "K"]
+                            && request.resource.data.day is number
+                            && request.resource.data.day >= 1
+                            && request.resource.data.day <= 40
+                            && request.resource.data.items is map
+                            && request.resource.data.keys().hasOnly([
+                              'studentId','grade','day','items','updatedAt'
+                            ]);
+
+      allow delete: if isTeacher();
+    }
+
+    // Canonical v55 Curriculum Quest record: one student + one mission.
+    // Student evidence is writable by its owner; verified is teacher-only.
+    match /curriculumProgress/{progressId} {
+      allow read: if isTeacher()
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+
+      allow create: if (isExploreStudent() || isTester())
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.itemId is string
+                    && progressId == request.auth.uid + "_" + request.resource.data.itemId
+                    && request.resource.data.grade in ["I", "K"]
+                    && request.resource.data.day is number
+                    && request.resource.data.day >= 1
+                    && request.resource.data.day <= 40
+                    && request.resource.data.subject in ["Math", "Science", "HUM"]
+                    && request.resource.data.verified == false
+                    && request.resource.data.questionsCorrect is number
+                    && request.resource.data.questionsSeen is number
+                    && request.resource.data.questionsCorrect >= 0
+                    && request.resource.data.questionsCorrect <= request.resource.data.questionsSeen
+                    && request.resource.data.questionsSeen <= 20;
+
+      allow update: if (isExploreStudent() || isTester())
+                    && resource.data.studentId == request.auth.uid
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.itemId == resource.data.itemId
+                    && request.resource.data.verified == resource.data.verified
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                      'watched','videoCoverage','videoReflection','videoWatchedRanges',
+                      'videoResumeTime','videoTrackingStatus','videoLastActivityMs','practiced',
+                      'practiceEvidence','standardCheckSubmitted','questionsCorrect','questionsSeen',
+                      'autoAnswers','autoAttempts','lastActivityAttempt',
+                      'activityAttempts','overrideStatus','quickWriteChoice','complete','questionsTotal',
+                      'quickWriteChoiceLocked','caseCompletionLocked','caseCompletedAt','dwInteraction',
+                      'reviewRevisionAttempts','reviewBaselineFingerprint','reviewAttemptFingerprints',
+                      'lastValidatorCode','lastValidatorMessage','lastAiTriage','lastApprovedAi',
+                      'teacherReviewEligible','updatedAt'
+                    ])
+                    && request.resource.data.questionsCorrect is number
+                    && request.resource.data.questionsSeen is number
+                    && request.resource.data.questionsCorrect >= 0
+                    && request.resource.data.questionsCorrect <= request.resource.data.questionsSeen
+                    && request.resource.data.questionsSeen <= 20;
+
+      allow update, delete: if isTeacher();
+    }
+
+    // Teacher-managed UID allowlist for outside testing accounts.
+    // ============================================================
+    // v56 RPG — Daily Boss loot and Class Shop purchase ledger
+    // These two collections were written by the RPG pages but had no rule,
+    // so every write fell through to the catch-all and was denied.
+    // ============================================================
+
+    // One chest per student per school day. The document id is
+    // {uid}_{dateKey}, and there is no update path — so a second chest on the
+    // same day is impossible rather than merely discouraged.
+    match /bossLoot/{lootId} {
+      allow read: if isTeacher() || (isSignedIn() && resource.data.studentId == request.auth.uid);
+      // DW AUDIT FIX V57.1.9: boss rows may record in-game loot, but never self-issue real-world passes or class-goal rewards.
+      allow create: if isExploreStudent()
+                    && request.resource.data.studentId == request.auth.uid
+                    && lootId == request.auth.uid + '_' + request.resource.data.dateKey
+                    && request.resource.data.keys().hasOnly([
+                      'studentId','studentName','dateKey','status','enemyId','goldAward','xpAward',
+                      'rareGoal','goalPoints','rareGoalStatus','itemId','eggAward','bossWinNumber',
+                      'eggOpportunity','eggAwarded','rarePrizeType','createdAt'
+                    ])
+                    && request.resource.data.status == 'complete'
+                    && request.resource.data.dateKey is string
+                    && request.resource.data.goldAward is number && request.resource.data.goldAward >= 0 && request.resource.data.goldAward <= 3
+                    && request.resource.data.xpAward is number && request.resource.data.xpAward >= 0 && request.resource.data.xpAward <= 12
+                    && request.resource.data.goalPoints == 0
+                    && request.resource.data.rareGoal == 'none'
+                    && request.resource.data.rareGoalStatus == 'none'
+                    && request.resource.data.rarePrizeType == 'none'
+                    && request.resource.data.itemId is string
+                    && request.resource.data.createdAt == request.time;
+      allow update, delete: if isTeacher();
+    }
+
+    match /rpgPurchases/{purchaseId} {
+      allow read: if isTeacher()
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+
+      allow create: if isExploreStudent()
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.itemId is string
+                    && request.resource.data.cost is number
+                    && request.resource.data.cost >= 0
+                    && request.resource.data.cost <= 5000;
+
+      allow update, delete: if isTeacher();
+    }
+
+    match /testerAccounts/{uid} {
+      allow get: if isTeacher() || (isSignedIn() && request.auth.uid == uid);
+      allow list: if isTeacher();
+      allow create, update, delete: if isTeacher();
+    }
+
+    match /testerSelfControls/{uid} {
+      allow read: if isTeacher() || (isSignedIn() && request.auth.uid == uid);
+      allow create, update: if isSignedIn()
+                            && request.auth.uid == uid
+                            && isTester()
+                            && request.resource.data.keys().hasOnly([
+                              'uid','unlockMorning','unlockCurriculum',
+                              'unlockArcade','unlockKingdom','unlockBoss','updatedAt'
+                            ])
+                            && request.resource.data.uid == request.auth.uid
+                            && request.resource.data.unlockMorning is bool
+                            && request.resource.data.unlockCurriculum is bool
+                            && request.resource.data.unlockArcade is bool
+                            && request.resource.data.unlockKingdom is bool
+                            && request.resource.data.unlockBoss is bool
+                            && request.resource.data.updatedAt == request.time
+                            && (request.resource.data.unlockMorning == false || testerCapability('selfUnlockMorning'))
+                            && (request.resource.data.unlockCurriculum == false || testerCapability('selfUnlockCurriculum'))
+                            && (request.resource.data.unlockArcade == false || testerCapability('selfUnlockArcade'))
+                            && (request.resource.data.unlockKingdom == false || testerCapability('selfUnlockKingdom'))
+                            && (request.resource.data.unlockBoss == false || testerCapability('selfUnlockBoss'));
+      allow delete: if isTeacher();
+    }
+
+    match /studentTransactions/{transactionId} {
+      allow read: if isTeacher()
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+      allow create, update, delete: if isTeacher();
+    }
+
+    match /testerAudit/{auditId} {
+      allow read: if isTeacher()
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+      allow write: if false;
+    }
+
+    // Assignment-bound active-time evidence from the embedded Storyvault
+    // reader. Every record has one deterministic student/date ID, fixed
+    // fields, server time, and a real-time gap between focused heartbeats.
+    match /readingSessions/{sessionId} {
+      // A Firestore transaction must read a deterministic document before its
+      // first create. Authorize that missing-document probe only for the
+      // signed-in student's own ID shape; existing records still require the
+      // stored owner field, and list queries remain owner-filtered.
+      allow get: if isTeacher()
+                 || (
+                   isSignedIn()
+                   && (
+                     (
+                       sessionId.matches('^' + request.auth.uid + '_[0-9]{4}-[0-9]{2}-[0-9]{2}_witches$')
+                       && !exists(/databases/$(database)/documents/readingSessions/$(sessionId))
+                     )
+                     || resource.data.studentId == request.auth.uid
+                   )
+                 );
+
+      allow list: if isTeacher()
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+
+      allow create: if isExploreStudent()
+                    && sessionId == request.auth.uid + '_' + request.resource.data.dateKey + '_witches'
+                    && request.resource.data.keys().hasOnly([
+                      'studentId','studentName','bookId','bookTitle','sourceBookId','sourceBookTitle','dateKey',
+                      'activeSeconds','firstPage','lastPage','pages','status',
+                      'createdAt','updatedAt'
+                    ])
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.studentName == get(/databases/$(database)/documents/students/$(request.auth.uid)).data.get('firstName', '')
+                    && request.resource.data.bookId == "witches"
+                    && request.resource.data.bookTitle == "Dragonswood Storyvault"
+                    && request.resource.data.sourceBookId is string
+                    && request.resource.data.sourceBookId.size() >= 1
+                    && request.resource.data.sourceBookId.size() <= 100
+                    && request.resource.data.sourceBookTitle is string
+                    && request.resource.data.sourceBookTitle.size() >= 1
+                    && request.resource.data.sourceBookTitle.size() <= 300
+                    && request.resource.data.dateKey is string
+                    && request.resource.data.dateKey.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+                    && hasReadingAssignment(request.resource.data.dateKey)
+                    && request.resource.data.activeSeconds is int
+                    && request.resource.data.activeSeconds >= 1
+                    && request.resource.data.activeSeconds <= 20
+                    && validReadingPages(request.resource.data)
+                    && validReadingStatus(request.resource.data)
+                    && request.resource.data.createdAt == request.time
+                    && request.resource.data.updatedAt == request.time;
+
+      allow update: if isExploreStudent()
+                    && sessionId == request.auth.uid + '_' + resource.data.dateKey + '_witches'
+                    && request.resource.data.keys().hasOnly([
+                      'studentId','studentName','bookId','bookTitle','sourceBookId','sourceBookTitle','dateKey',
+                      'activeSeconds','firstPage','lastPage','pages','status',
+                      'createdAt','updatedAt'
+                    ])
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                      'activeSeconds','firstPage','lastPage','pages','status','updatedAt',
+                      'bookTitle','sourceBookId','sourceBookTitle',
+                      'targetMinutes','lastHeartbeatMs'
+                    ])
+                    && resource.data.studentId == request.auth.uid
+                    && request.resource.data.studentId == resource.data.studentId
+                    && request.resource.data.studentName == resource.data.studentName
+                    && request.resource.data.bookId == resource.data.bookId
+                    && request.resource.data.bookTitle == "Dragonswood Storyvault"
+                    && request.resource.data.sourceBookId is string
+                    && request.resource.data.sourceBookId.size() >= 1
+                    && request.resource.data.sourceBookId.size() <= 100
+                    && request.resource.data.sourceBookTitle is string
+                    && request.resource.data.sourceBookTitle.size() >= 1
+                    && request.resource.data.sourceBookTitle.size() <= 300
+                    && request.resource.data.dateKey == resource.data.dateKey
+                    && request.resource.data.createdAt == resource.data.createdAt
+                    && hasReadingAssignment(request.resource.data.dateKey)
+                    && request.resource.data.activeSeconds is int
+                    && request.resource.data.activeSeconds > resource.data.activeSeconds
+                    && request.resource.data.activeSeconds <= resource.data.activeSeconds + 20
+                    && request.resource.data.activeSeconds <= 28800
+                    && validReadingPages(request.resource.data)
+                    && (
+                      request.resource.data.sourceBookId != resource.data.get('sourceBookId', '')
+                      || (
+                        request.resource.data.firstPage <= resource.data.firstPage
+                        && request.resource.data.lastPage >= resource.data.lastPage
+                      )
+                    )
+                    && validReadingStatus(request.resource.data)
+                    && request.resource.data.updatedAt == request.time
+                    && resource.data.updatedAt is timestamp
+                    && request.time >= resource.data.updatedAt + duration.value(10, 's');
+
+      allow delete: if isTeacher();
+    }
+
+    match /studentReadingPlans/{studentId} {
+      allow read: if isTeacher()
+                  || (isSignedIn() && request.auth.uid == studentId);
+
+      allow create: if isTeacher()
+                    || (
+                      isExploreStudent()
+                      && request.auth.uid == studentId
+                      && request.resource.data.keys().hasOnly([
+                        'studentId','studentEmail','state','updatedAt'
+                      ])
+                      && request.resource.data.studentId == request.auth.uid
+                      && request.resource.data.state is map
+                      && request.resource.data.state.lockedBookId is string
+                      && request.resource.data.state.pages is map
+                      && request.resource.data.state.pageVersions is map
+                      && request.resource.data.state.passedTests is map
+                      && request.resource.data.state.attempts is map
+                      && request.resource.data.state.completedBookIds is list
+                      && request.resource.data.state.seriesOverrideBookIds is list
+                      && request.resource.data.state.seriesOverrideBookIds.size() == 0
+                      && request.resource.data.updatedAt == request.time
+                    );
+
+      allow update: if isTeacher()
+                    || (
+                      isExploreStudent()
+                      && request.auth.uid == studentId
+                      && request.resource.data.keys().hasOnly([
+                        'studentId','studentEmail','state','updatedAt'
+                      ])
+                      && request.resource.data.studentId == resource.data.studentId
+                      && request.resource.data.state is map
+                      && request.resource.data.state.lockedBookId is string
+                      && request.resource.data.state.pages is map
+                      && request.resource.data.state.pageVersions is map
+                      && request.resource.data.state.passedTests is map
+                      && request.resource.data.state.attempts is map
+                      && request.resource.data.state.completedBookIds is list
+                      && request.resource.data.state.seriesOverrideBookIds is list
+                      && request.resource.data.state.seriesOverrideBookIds == resource.data.state.get('seriesOverrideBookIds', [])
+                      && request.resource.data.updatedAt == request.time
+                      && (
+                        request.resource.data.state.lockedBookId == resource.data.state.lockedBookId
+                        || resource.data.state.lockedBookId == ''
+                        || (
+                          request.resource.data.state.lockedBookId == ''
+                          && request.resource.data.state.completedBookIds.hasAny([
+                            resource.data.state.lockedBookId
+                          ])
+                        )
+                      )
+                    );
+
+      allow delete: if isTeacher();
+    }
+
+    match /chapterTests/{testId} {
+      allow read: if isSignedIn();
+      allow write: if isTeacher();
+    }
+
+    match /games/{gameId} {
+      allow read: if true;
+      allow write: if isTeacher();
+    }
+
+    match /shopItems/{itemId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isTeacher();
+
+      allow update: if isExploreStudent()
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['quantity','updatedAt'])
+                    && resource.data.quantity is number
+                    && request.resource.data.quantity is number
+                    && request.resource.data.quantity == resource.data.quantity - 1
+                    && request.resource.data.quantity >= 0;
+    }
+
+    match /purchases/{purchaseId} {
+      allow read: if isTeacher()
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+
+      allow create: if isExploreStudent()
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.itemId is string
+                    && request.resource.data.cost is number
+                    && request.resource.data.cost >= 0
+                    && (request.resource.data.status == "pending"
+                        || request.resource.data.status == "owned")
+                    && exists(/databases/$(database)/documents/shopItems/$(request.resource.data.itemId))
+                    && request.resource.data.cost
+                       == get(/databases/$(database)/documents/shopItems/$(request.resource.data.itemId)).data.cost
+                    && get(/databases/$(database)/documents/shopItems/$(request.resource.data.itemId)).data.active != false;
+
+      allow update, delete: if isTeacher();
+    }
+
+
+
+    // One live bathroom slot per student group.
+    // IMPORTANT: slot access is intentionally based on the slot document's
+    // studentId, not on reading /students/{uid}. This avoids Firestore
+    // permission failures when older student profiles do not yet contain
+    // genderGroup.
+    match /bathroomSlots/{groupId} {
+      allow read: if isTeacher() || isExploreStudent();
+
+      allow create: if isExploreStudent()
+                    && (groupId == "boy" || groupId == "girl")
+                    && request.resource.data.group == groupId
+                    && request.resource.data.occupied == true
+                    && request.resource.data.studentId == request.auth.uid;
+
+      allow update: if isExploreStudent()
+                    && (groupId == "boy" || groupId == "girl")
+                    && request.resource.data.group == groupId
+                    && (
+                      (
+                        request.resource.data.occupied == true
+                        && request.resource.data.studentId == request.auth.uid
+                        && (
+                          resource.data.occupied == false
+                          || resource.data.studentId == request.auth.uid
+                          || resource.data.dateKey != request.resource.data.dateKey
+                        )
+                      )
+                      ||
+                      (
+                        request.resource.data.occupied == false
+                        && resource.data.studentId == request.auth.uid
+                      )
+                    );
+
+      allow create, update, delete: if isTeacher();
+    }
+
+    // Digital bathroom pass state. Students may manage only their own daily status.
+    match /bathroomStatus/{studentId} {
+      allow read: if isTeacher() || isOwner(studentId);
+      allow create: if isOwner(studentId)
+                    && isExploreStudent()
+                    && substituteModeAllowsPasses()
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.passesUsed == 1
+                    && request.resource.data.approvalCredits == 0
+                    && request.resource.data.active == true;
+      allow update: if isOwner(studentId)
+                    && (isExploreStudent() || isTester())
+                    && (request.resource.data.active == false || substituteModeAllowsPasses())
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.passesUsed is number
+                    && request.resource.data.passesUsed >= 0
+                    && request.resource.data.passesUsed <= 3
+                    && request.resource.data.approvalCredits is number
+                    && request.resource.data.approvalCredits >= 0
+                    && request.resource.data.active is bool
+                    && (
+                      (request.resource.data.dateKey == resource.data.dateKey
+                       && request.resource.data.passesUsed >= resource.data.passesUsed
+                       && request.resource.data.passesUsed <= resource.data.passesUsed + 1
+                       && request.resource.data.approvalCredits <= resource.data.approvalCredits)
+                      ||
+                      (request.resource.data.dateKey != resource.data.dateKey
+                       && request.resource.data.passesUsed == 1
+                       && request.resource.data.approvalCredits == 0
+                       && request.resource.data.active == true)
+                    );
+      allow create, update, delete: if isTeacher();
+    }
+
+    match /bathroomRequests/{requestId} {
+      allow create: if isExploreStudent()
+                    && substituteModeAllowsPasses()
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.status == "pending"
+                    && requestId == request.auth.uid + '_' + request.resource.data.dateKey
+                    && hasNoOtherPendingExtraPass(request.auth.uid, request.resource.data.dateKey, 'bathroom');
+      allow read: if isTeacher()
+                  || (isSignedIn() && requestId.matches('^' + request.auth.uid + '_.*$'))
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+      allow update: if isExploreStudent()
+                    && substituteModeAllowsPasses()
+                    && resource.data.studentId == request.auth.uid
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.status == "pending"
+                    && requestId == request.auth.uid + '_' + request.resource.data.dateKey
+                    && hasNoOtherPendingExtraPass(request.auth.uid, request.resource.data.dateKey, 'bathroom')
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['status','createdAt','updatedAt']);
+      allow update, delete: if isTeacher();
+    }
+
+
+    // Digital snack passes: 2 automatic uses per day, then teacher-approved extras.
+    match /snackStatus/{studentId} {
+      allow read: if isTeacher() || isOwner(studentId);
+      allow create: if isOwner(studentId)
+                    && isExploreStudent()
+                    && substituteModeAllowsPasses()
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.passesUsed == 1
+                    && request.resource.data.approvalCredits == 0
+                    && request.resource.data.active == true;
+      allow update: if isOwner(studentId)
+                    && isExploreStudent()
+                    && (request.resource.data.active == false || substituteModeAllowsPasses())
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.passesUsed is number
+                    && request.resource.data.passesUsed >= 0
+                    && request.resource.data.passesUsed <= 2
+                    && request.resource.data.approvalCredits is number
+                    && request.resource.data.approvalCredits >= 0
+                    && request.resource.data.active is bool
+                    && (
+                      (request.resource.data.dateKey == resource.data.dateKey
+                       && request.resource.data.passesUsed >= resource.data.passesUsed
+                       && request.resource.data.passesUsed <= resource.data.passesUsed + 1
+                       && request.resource.data.approvalCredits <= resource.data.approvalCredits)
+                      ||
+                      (request.resource.data.dateKey != resource.data.dateKey
+                       && request.resource.data.passesUsed == 1
+                       && request.resource.data.approvalCredits == 0
+                       && request.resource.data.active == true)
+                    );
+      allow create, update, delete: if isTeacher();
+    }
+
+    match /snackRequests/{requestId} {
+      allow create: if isExploreStudent()
+                    && substituteModeAllowsPasses()
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.status == "pending"
+                    && requestId == request.auth.uid + '_' + request.resource.data.dateKey
+                    && hasNoOtherPendingExtraPass(request.auth.uid, request.resource.data.dateKey, 'snack');
+      allow read: if isTeacher()
+                  || (isSignedIn() && requestId.matches('^' + request.auth.uid + '_.*$'))
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+      allow update: if isExploreStudent()
+                    && substituteModeAllowsPasses()
+                    && resource.data.studentId == request.auth.uid
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.status == "pending"
+                    && requestId == request.auth.uid + '_' + request.resource.data.dateKey
+                    && hasNoOtherPendingExtraPass(request.auth.uid, request.resource.data.dateKey, 'snack')
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['status','createdAt','updatedAt']);
+      allow update, delete: if isTeacher();
+    }
+
+
+    match /studentJobWeeks/{weekId} {
+      allow read: if isTeacher()
+                  || (isSignedIn() && weekId.matches('^' + request.auth.uid + '_.*$'))
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+
+      allow create: if isExploreStudent()
+                    && weekId.matches('^' + request.auth.uid + '_.*$')
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.weekKey is string
+                    && request.resource.data.checkedDays is list
+                    && request.resource.data.completedCount is number
+                    && request.resource.data.completedCount >= 0
+                    && request.resource.data.completedCount <= 5
+                    && request.resource.data.paid == false;
+
+      // Student check-off: only completion evidence and its server timestamp
+      // may change. V3 writes updatedAt together with every check-off.
+      // UID-prefixed document IDs keep this limited to the signed-in student,
+      // including weekly records created by older Dragonswood builds.
+      allow update: if isExploreStudent()
+                    && weekId.matches('^' + request.auth.uid + '_.*$')
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['checkedDays','completedCount','updatedAt'])
+                    && request.resource.data.checkedDays is list
+                    && request.resource.data.completedCount is number
+                    && request.resource.data.completedCount >= 0
+                    && request.resource.data.completedCount <= 5
+                    && request.resource.data.updatedAt == request.time;
+
+      allow create, update, delete: if isTeacher();
+    }
+
+    match /classCalendarEvents/{eventId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isTeacher();
+    }
+
+
+    match /classPollVotes/{voteId} {
+      allow read: if isTeacher() || isSignedIn();
+      allow create: if isExploreStudent()
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.pollId is string
+                    && request.resource.data.choiceIndex is number;
+      allow update: if false;
+      allow delete: if isTeacher();
+    }
+
+
+
+    match /passHistory/{visitId} {
+      allow read: if isTeacher()
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+      allow create: if isExploreStudent()
+                    && request.resource.data.studentId == request.auth.uid;
+      allow update: if isExploreStudent()
+                    && resource.data.studentId == request.auth.uid
+                    && request.resource.data.studentId == resource.data.studentId;
+      allow create, update, delete: if isTeacher();
+    }
+
+    match /passStatus/{passId} {
+      allow read: if isTeacher()
+                  || (isSignedIn() && passId.matches('^' + request.auth.uid + '_.*$'))
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+      allow create: if isExploreStudent()
+                    && substituteModeAllowsPasses()
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.type in ['outOfSeat','office'];
+      allow update: if isExploreStudent()
+                    && (request.resource.data.active == false || substituteModeAllowsPasses())
+                    && resource.data.studentId == request.auth.uid
+                    && request.resource.data.studentId == resource.data.studentId
+                    && request.resource.data.type == resource.data.type;
+      allow create, update, delete: if isTeacher();
+    }
+
+
+
+    // Out of Seat / Emergency Office extra-pass requests.
+    // Each student gets one automatic use per type per day; teacher approval grants extras.
+    match /passRequests/{requestId} {
+      allow create: if isExploreStudent()
+                    && substituteModeAllowsPasses()
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.status == "pending"
+                    && request.resource.data.type in ['outOfSeat','office']
+                    && requestId == request.auth.uid + '_' + request.resource.data.type + '_' + request.resource.data.dateKey
+                    && hasNoOtherPendingExtraPass(request.auth.uid, request.resource.data.dateKey, request.resource.data.type);
+      allow read: if isTeacher()
+                  || (isSignedIn() && requestId.matches('^' + request.auth.uid + '_.*$'))
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+      allow update: if isExploreStudent()
+                    && substituteModeAllowsPasses()
+                    && resource.data.studentId == request.auth.uid
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.status == "pending"
+                    && requestId == request.auth.uid + '_' + request.resource.data.type + '_' + request.resource.data.dateKey
+                    && hasNoOtherPendingExtraPass(request.auth.uid, request.resource.data.dateKey, request.resource.data.type)
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['status','createdAt','updatedAt']);
+      allow update, delete: if isTeacher();
+    }
+
+    match /pointRequests/{requestId} {
+      allow create: if isExploreStudent()
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.status == "pending"
+                    && request.resource.data.reason is string;
+      allow read: if isTeacher() || (isSignedIn() && resource.data.studentId == request.auth.uid);
+      allow update: if isExploreStudent()
+                    && resource.data.studentId == request.auth.uid
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.status == "pending"
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['reason','status','createdAt','updatedAt']);
+      allow update, delete: if isTeacher();
+    }
+
+    // ============================================================
+    // DRAGONSWOOD v50 — SCRIBE ARENA / WRITING PORTFOLIO
+    // ============================================================
+    match /writingSessions/{sessionId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isTeacher();
+    }
+
+    match /writingResponses/{responseId} {
+      // Students can read only their own writing; teacher can read all.
+      allow read: if isTeacher()
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+
+      // Students create only their own draft/response record.
+      allow create: if isExploreStudent()
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.sessionId is string
+                    && request.resource.data.responseText is string
+                    && request.resource.data.responseText.size() <= 12000
+                    && request.resource.data.status in ['draft','submitted'];
+
+      // Students may edit/submit their own writing, but cannot write AI or teacher grades.
+      allow update: if isExploreStudent()
+                    && resource.data.studentId == request.auth.uid
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                      'responseText','wordCount','sentenceCount','paragraphCount',
+                      'capitalizedSentenceStarts','hasEndingPunctuation',
+                      'status','sessionTitle','writingType','targetSkill','prompt',
+                      'submittedAt','updatedAt'
+                    ])
+                    && request.resource.data.responseText is string
+                    && request.resource.data.responseText.size() <= 12000;
+
+      allow update, delete: if isTeacher();
+    }
+
+    match /writingVotes/{voteId} {
+      allow read: if isTeacher();
+      allow create: if isExploreStudent()
+                    && request.resource.data.studentId == request.auth.uid;
+      allow update, delete: if isTeacher();
+    }
+
+    // ============================================================
+    // v56.19.1 — curriculum history, gradebook, leaderboard rewards,
+    // and one-time physical prize drops.
+    // ============================================================
+
+    // Immutable history of a student's Curriculum Quest attempts.
+    match /curriculumAttempts/{attemptId} {
+      allow read: if isTeacher()
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+
+      allow create: if isExploreStudent()
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.itemId is string
+                    && request.resource.data.attemptNumber is number
+                    && request.resource.data.attemptNumber >= 1
+                    && request.resource.data.questionsCorrect is number
+                    && request.resource.data.questionsSeen is number
+                    && request.resource.data.questionsSeen >= 1
+                    && request.resource.data.questionsSeen <= 100
+                    && request.resource.data.questionsCorrect >= 0
+                    && request.resource.data.questionsCorrect
+                       <= request.resource.data.questionsSeen
+                    && request.resource.data.accuracy is number
+                    && request.resource.data.accuracy >= 0
+                    && request.resource.data.accuracy <= 100;
+
+      allow update, delete: if isTeacher();
+    }
+
+    // Assignment configuration is classroom-wide. Signed-in students need to
+    // read it to calculate their own grade, but only the teacher may change it.
+    match /gradebookAssignments/{assignmentId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isTeacher();
+    }
+
+    // Teacher-entered grades and notes are private to the individual student.
+    match /gradebookGrades/{gradeId} {
+      allow read: if isTeacher()
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+      allow create, update, delete: if isTeacher();
+    }
+
+    // The weekly leaderboard display needs these issued-reward records.
+    // Rewards can change Gold, so issuance remains teacher-only.
+    match /leaderboardRewards/{rewardId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isTeacher();
+    }
+
+    // Rare real-world rewards are created only by the same authenticated
+    // student and only when a matching Daily Boss loot record exists in the
+    // same committed batch. Students may make one earned reward into a
+    // redemption request; only the teacher can mark it redeemed or delete it.
+    match /physicalPrizeDrops/{dropId} {
+      allow read: if isTeacher()
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+
+      allow create: if isTeacher();
+
+      allow update: if isExploreStudent()
+                    && resource.data.studentId == request.auth.uid
+                    && request.resource.data.studentId == resource.data.studentId
+                    && resource.data.status == 'earned'
+                    && request.resource.data.status == 'requested'
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['status','requestedAt']);
+
+      allow create, update, delete: if isTeacher();
+    }
+
+    // Student-submitted Dragonswood ideas and bug reports. Students may
+    // create and read their own entries; only a teacher changes workflow
+    // status or adds the response shown back to the student.
+    match /studentSuggestions/{suggestionId} {
+      allow create: if isExploreStudent()
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.status == 'new'
+                    && request.resource.data.type in ['idea','change','bug','content']
+                    && request.resource.data.text is string
+                    && request.resource.data.text.size() >= 8
+                    && request.resource.data.text.size() <= 1200;
+      allow read: if isTeacher()
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+      allow update, delete: if isTeacher();
+    }
+
+    // Private workflow notes for the teacher's Student Requests Center.
+    // Students receive teacherResponse on their suggestion document but can
+    // never read the teacher's internal planning notes.
+    match /studentSuggestionNotes/{suggestionId} {
+      allow read, create, update, delete: if isTeacher();
+    }
+
+    // Lightweight classroom-focus history. This never changes grades or
+    // rewards; it records only meaningful (3+ second) tab departures.
+    match /focusEvents/{eventId} {
+      allow create: if isExploreStudent()
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.awaySeconds is number
+                    && request.resource.data.awaySeconds >= 3
+                    && request.resource.data.awaySeconds <= 86400;
+      allow read, update, delete: if isTeacher();
+    }
+
+    // Academic AI Answer Rescue. Cloud Functions Admin SDK owns writes.
+    match /academicAiUsage/{docId} {
+      allow read: if isTeacher();
+      allow write: if false;
+    }
+
+    match /academicAnswerAiAudit/{docId} {
+      allow read: if isTeacher();
+      allow write: if false;
+    }
+
+    match /academicAnswerAiCache/{docId} {
+      allow read, write: if false;
+    }
+
+    // Arcade Tokens and the 30-minute clock are server-authoritative. Clients
+    // can display only their own records; callable Functions own every award,
+    // debit, lock, end, and refund write.
+    match /arcadeAccess/{uid} {
+      allow read: if isTeacher() || isOwner(uid);
+      allow write: if false;
+    }
+
+    match /arcadeSettings/{docId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /arcadeTokenPeriods/{periodId} {
+      allow read: if isTeacher()
+                  || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow write: if false;
+    }
+
+    match /arcadeSessions/{sessionId} {
+      allow read: if isTeacher()
+                  || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow write: if false;
+    }
+
+    match /arcadeAudit/{auditId} {
+      allow read: if isTeacher();
+      allow write: if false;
+    }
+
+    match /arcadeGameResults/{resultId} {
+      allow read: if isTeacher()
+                  || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow write: if false;
+    }
+
+    // Arcade performance is record-only. Every client score write must name a
+    // live, unexpired, teacher-authorized session for the authenticated uid.
+    match /arcadeScores/{scoreId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+                    && scoreId == arcadeScoreId(request.resource.data)
+                    && validArcadeScore(request.resource.data);
+      allow update: if isSignedIn()
+                    && resource.data.uid == request.auth.uid
+                    && scoreId == arcadeScoreId(request.resource.data)
+                    && request.resource.data.boardId == resource.data.boardId
+                    && request.resource.data.gameId == resource.data.gameId
+                    && request.resource.data.periodType == resource.data.periodType
+                    && request.resource.data.periodKey == resource.data.periodKey
+                    && request.resource.data.score >= resource.data.score
+                    && validArcadeScore(request.resource.data);
+      allow delete: if false;
+    }
+
+    match /voidRunnerPlayers/{uid} {
+      allow read: if isTeacher() || isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly([
+          'cells','unlocked','completed','runner','achievements','challenges',
+          'storySeen','schemaVersion','arcadeSessionId','updatedAt'
+        ])
+        && request.resource.data.cells is int
+        && request.resource.data.cells >= 0
+        && request.resource.data.cells <= 1000000000
+        && request.resource.data.unlocked is int
+        && request.resource.data.unlocked >= 0
+        && request.resource.data.unlocked <= 10000
+        && request.resource.data.completed is list
+        && request.resource.data.completed.size() <= 200
+        && request.resource.data.runner is string
+        && request.resource.data.runner.size() <= 80
+        && request.resource.data.achievements is list
+        && request.resource.data.achievements.size() <= 200
+        && request.resource.data.challenges is map
+        && request.resource.data.challenges.keys().size() <= 200
+        && request.resource.data.storySeen is list
+        && request.resource.data.storySeen.size() <= 200
+        && request.resource.data.schemaVersion == 2
+        && request.resource.data.updatedAt == request.time
+        && hasLiveArcadeSession(uid, request.resource.data.arcadeSessionId);
+      allow delete: if false;
+    }
+
+    // Documentation-only default deny. Firestore ORs matching allow rules, so
+    // this does not override any explicit block above; unmatched paths remain
+    // denied because no true allow statement exists.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+  }
+}

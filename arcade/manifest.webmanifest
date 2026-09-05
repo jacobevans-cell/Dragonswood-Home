@@ -1,0 +1,17 @@
+{
+  "name": "Dragonswood Arcade",
+  "short_name": "DW Arcade",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#061b17",
+  "theme_color": "#0a251f",
+  "icons": [
+    {
+      "src": "../v33-integration/assets/branding/dragonswood-mascot-crest.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

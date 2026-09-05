@@ -1,0 +1,91 @@
+/* Arcade-local Veil presentation layer. Access, routing, and rewards remain unchanged. */
+.hero.veil-title-card {
+  min-height: 400px;
+  grid-template-columns: minmax(0, 58%) 1fr;
+  background:
+    linear-gradient(90deg, rgba(2, 18, 15, .16) 0%, rgba(2, 18, 15, .08) 48%, rgba(2, 18, 15, 0) 72%),
+    url("assets/veil/hero/dragonswood-arcade-header-definitive-v1.webp") center / cover no-repeat;
+  border-color: rgba(223, 185, 87, .34);
+}
+
+.hero.veil-title-card::after {
+  display: none;
+}
+
+.hero.veil-title-card .hero-copy {
+  position: relative;
+  z-index: 2;
+  max-width: 720px;
+}
+
+.game-card.has-veil-tile {
+  isolation: isolate;
+  background: #071b17;
+}
+
+.game-card.has-veil-tile .game-card-art {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: cover;
+  object-position: center;
+  transform: none;
+  filter: none;
+  transition: transform 240ms ease, filter 240ms ease;
+}
+
+.game-card.has-veil-tile .game-card-content {
+  position: relative;
+  z-index: 2;
+  width: min(68%, 430px);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, .88);
+}
+
+.game-card.has-veil-tile:hover .game-card-art,
+.game-card.has-veil-tile:focus-within .game-card-art {
+  transform: scale(1.025);
+  filter: brightness(1.05) saturate(1.03);
+}
+
+.game-card.has-veil-tile .play-game:focus-visible {
+  outline: 3px solid #fffdf5;
+  outline-offset: 4px;
+}
+
+@media (max-width: 900px) {
+  .hero.veil-title-card {
+    min-height: 370px;
+    background-position: 58% center;
+  }
+}
+
+@media (max-width: 600px) {
+  .hero.veil-title-card {
+    min-height: 360px;
+    background:
+      linear-gradient(90deg, rgba(2, 18, 15, .88), rgba(2, 18, 15, .62) 65%, rgba(2, 18, 15, .38)),
+      url("assets/veil/hero/dragonswood-arcade-header-definitive-v1.webp") 58% center / cover no-repeat;
+  }
+
+  .game-card.has-veil-tile .game-card-content {
+    width: 76%;
+  }
+
+  .game-card.has-veil-tile .game-card-art {
+    object-position: 58% center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-card.has-veil-tile .game-card-art {
+    transition: none;
+  }
+
+  .game-card.has-veil-tile:hover .game-card-art,
+  .game-card.has-veil-tile:focus-within .game-card-art {
+    transform: none;
+  }
+}

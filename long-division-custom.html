@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Long Division Quest • Custom Worksheet Mode - Aligned</title><link rel="icon" type="image/png" href="v33-integration/assets/branding/dragonswood-mascot-crest.png">
+<style>
+:root{
+  --bg:#07111f;
+  --panel:#111c2e;
+  --panel2:#0b1727;
+  --cyan:#27d6ff;
+  --purple:#a855f7;
+  --green:#7ed957;
+  --blue:#5ac8fa;
+  --red:#ff6b6b;
+  --text:#f2f8ff;
+  --muted:#9eb2c8;
+  --border:#29435f;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at 15% 0%,rgba(39,214,255,.15),transparent 34%),
+    radial-gradient(circle at 90% 8%,rgba(168,85,247,.14),transparent 30%),
+    linear-gradient(180deg,#07101c,#0a1422);
+  min-height:100vh;
+}
+.app{
+  width:min(1060px,95%);
+  margin:24px auto 40px;
+}
+h1{
+  text-align:center;
+  margin:0;
+  text-transform:uppercase;
+  font-size:clamp(30px,5vw,50px);
+  letter-spacing:2px;
+}
+h1 span{color:var(--cyan)}
+.subtitle{
+  text-align:center;
+  color:var(--muted);
+  font-weight:800;
+  letter-spacing:.8px;
+  margin:8px 0 18px;
+}
+.top{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+  padding:14px 16px;
+  border:1px solid var(--border);
+  border-radius:15px;
+  background:linear-gradient(180deg,#122038,#0d1828);
+}
+.score{
+  background:var(--cyan);
+  color:#06111b;
+  font-weight:900;
+  border-radius:9px;
+  padding:10px 14px;
+}
+.steps{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:9px;
+  margin:14px 0;
+}
+.step{
+  border:1px solid #35506d;
+  border-radius:13px;
+  padding:12px 8px;
+  text-align:center;
+  background:#101c2e;
+}
+.step strong{display:block;font-size:13px;letter-spacing:.6px}
+.step small{color:var(--muted)}
+.step.active{
+  border-color:var(--cyan);
+  box-shadow:0 0 18px rgba(39,214,255,.18);
+  background:#10283a;
+}
+.layout{
+  display:grid;
+  grid-template-columns:1.2fr .8fr;
+  gap:16px;
+}
+.panel{
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:linear-gradient(180deg,#111d30,#0c1726);
+  overflow:hidden;
+}
+.panel-title{
+  padding:12px 15px;
+  border-bottom:1px solid #263e58;
+  color:var(--cyan);
+  font-weight:900;
+  font-size:13px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+}
+.problem{
+  padding:26px 18px 18px;
+}
+
+/* FIXED LONG DIVISION GRID */
+.division-stage{
+  width:min(100%,520px);
+  margin:0 auto 8px;
+}
+.quotient-grid,
+.dividend-grid,
+.work-grid{
+  display:grid;
+  grid-template-columns:repeat(3,72px);
+  justify-content:center;
+}
+.quotient-grid{
+  margin-left:76px;
+  margin-bottom:2px;
+}
+.quotient-cell,
+.digit-cell,
+.work-cell{
+  width:72px;
+  height:60px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:32px;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+}
+.quotient-cell{
+  border:2px solid #8dcf67;
+  background:#0d1828;
+}
+.quotient-cell.blank{
+  color:transparent;
+}
+.division-row{
+  display:grid;
+  grid-template-columns:76px auto;
+  justify-content:center;
+  align-items:start;
+}
+.divisor-box{
+  width:70px;
+  height:60px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:34px;
+  font-weight:900;
+  color:var(--cyan);
+  border-right:4px solid var(--cyan);
+  border-top-right-radius:28px;
+  margin-top:0;
+}
+.dividend-grid{
+  border-top:4px solid var(--cyan);
+}
+.digit-cell{
+  border:2px solid #d98c8c;
+  background:#0d1828;
+}
+.work-wrap{
+  margin-left:76px;
+  padding-top:10px;
+}
+.work-row{
+  display:grid;
+  grid-template-columns:repeat(3,72px);
+  justify-content:center;
+  position:relative;
+  margin:2px 0;
+}
+.work-row.subtract::before{
+  content:"−";
+  position:absolute;
+  left:calc(50% - 138px);
+  top:10px;
+  font-size:29px;
+  color:#fff;
+}
+.work-cell{
+  height:48px;
+  font-size:27px;
+  border:2px solid #6ec7f0;
+  background:#0b1625;
+}
+.work-cell.empty{
+  border-color:transparent;
+  background:transparent;
+}
+.work-row.product .work-cell.filled{
+  border-color:#8dcf67;
+}
+.work-row.remainder .work-cell.filled{
+  border-color:#6ec7f0;
+}
+.work-row.bring .work-cell.filled{
+  border-color:#d98c8c;
+}
+.bring-arrow{
+  text-align:center;
+  font-size:28px;
+  line-height:1;
+  color:#fff;
+  margin:1px 0 2px 76px;
+}
+.answer-zone{
+  border-top:1px solid #263e58;
+  padding:15px;
+}
+.answer-zone label{display:block;font-weight:900;margin-bottom:8px}
+.answer-row{display:flex;gap:8px}
+input{
+  flex:1;
+  min-width:0;
+  background:#081320;
+  color:white;
+  border:1px solid #3b5876;
+  border-radius:10px;
+  padding:12px;
+  font-size:18px;
+}
+button{
+  border:none;
+  border-radius:10px;
+  padding:12px 16px;
+  font-weight:900;
+  cursor:pointer;
+}
+.primary{
+  background:linear-gradient(90deg,var(--cyan),#67e8f9);
+  color:#06111b;
+}
+.secondary{
+  background:#281c39;
+  color:#f5eeff;
+  border:1px solid #8053a9;
+}
+.feedback{min-height:22px;margin-top:9px;font-weight:900}
+.right{display:grid;gap:16px}
+.coach{
+  border:1px solid #315271;
+  border-radius:16px;
+  padding:18px;
+  background:linear-gradient(135deg,rgba(39,214,255,.08),transparent 50%),#101d30;
+}
+.tag{
+  display:inline-block;
+  background:var(--cyan);
+  color:#05111b;
+  border-radius:6px;
+  padding:5px 8px;
+  font-weight:900;
+  font-size:11px;
+  letter-spacing:.8px;
+}
+.coach h2{
+  margin:13px 0 7px;
+  text-transform:uppercase;
+}
+.coach p{
+  margin:0;
+  color:#dbe7f2;
+  font-size:18px;
+  line-height:1.45;
+}
+.controls{padding:15px;display:grid;gap:9px}
+.controls button{width:100%}
+.progress{text-align:center;color:var(--muted);font-size:13px;font-weight:800}
+.memory{
+  border:1px solid #574073;
+  border-radius:16px;
+  padding:16px;
+  background:rgba(80,40,110,.14);
+}
+.memory b{color:#d8b4fe}
+.memory .cycle{
+  font-size:27px;
+  font-weight:900;
+  margin:8px 0;
+}
+.memory .cycle span{color:var(--cyan)}
+.note{
+  margin-top:8px;
+  color:var(--muted);
+  font-size:13px;
+}
+
+.student-cell-input{
+  width:100%;
+  height:100%;
+  border:0;
+  border-radius:0;
+  padding:0;
+  text-align:center;
+  font:inherit;
+  font-weight:900;
+  color:#fff;
+  background:rgba(39,214,255,.08);
+  outline:2px solid var(--cyan);
+  outline-offset:-3px;
+}
+.student-cell-input:focus{
+  border:0;
+  box-shadow:inset 0 0 0 3px rgba(39,214,255,.28);
+}
+.student-cell-input.wrong{
+  outline-color:#ff6b6b;
+  background:rgba(255,107,107,.13);
+  animation:shake .18s linear 2;
+}
+.student-cell-input.correct{
+  outline-color:#7ed957;
+  background:rgba(126,217,87,.10);
+}
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  50%{transform:translateX(4px)}
+}
+.cell-instruction{
+  margin-top:14px;
+  padding:13px 14px;
+  border:1px solid #315271;
+  border-radius:12px;
+  background:rgba(39,214,255,.05);
+  color:#dbe7f2;
+  font-weight:800;
+  line-height:1.4;
+}
+.cell-feedback{
+  min-height:22px;
+  margin-top:8px;
+  font-weight:900;
+}
+
+
+.mission-dashboard{
+  display:grid;
+  grid-template-columns:1.2fr repeat(4,.7fr);
+  gap:9px;
+  margin:14px 0;
+}
+.mission-card{
+  border:1px solid #35506d;
+  border-radius:13px;
+  padding:11px 12px;
+  background:linear-gradient(180deg,#111f33,#0d1828);
+  min-height:68px;
+}
+.mission-card .label{
+  color:var(--muted);
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:1px;
+  text-transform:uppercase;
+}
+.mission-card .value{
+  margin-top:5px;
+  font-size:20px;
+  font-weight:900;
+}
+.xp-card .value{color:var(--cyan)}
+.xp-track{
+  height:9px;
+  margin-top:8px;
+  border-radius:999px;
+  overflow:hidden;
+  background:#07111e;
+  border:1px solid #29435f;
+}
+.xp-fill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--cyan),var(--purple));
+  transition:width .3s ease;
+}
+.stars{color:#facc15;letter-spacing:2px}
+.fire{color:#fb923c}
+.mission-complete{
+  display:none;
+  margin:14px 0;
+  padding:18px;
+  border:1px solid #8dcf67;
+  border-radius:15px;
+  text-align:center;
+  background:linear-gradient(180deg,rgba(126,217,87,.12),rgba(39,214,255,.05));
+  box-shadow:0 0 22px rgba(126,217,87,.10);
+}
+.mission-complete.show{display:block}
+.mission-complete h2{
+  margin:0 0 6px;
+  color:#b9f58f;
+  letter-spacing:1px;
+}
+.mission-complete p{margin:5px 0;color:#dbe7f2}
+.level-badge{
+  display:inline-block;
+  margin-top:7px;
+  padding:5px 9px;
+  border-radius:7px;
+  background:#281c39;
+  border:1px solid #8053a9;
+  color:#e9d5ff;
+  font-weight:900;
+  font-size:12px;
+}
+
+
+.hint-panel{
+  margin-top:10px;
+  padding:13px 14px;
+  border:1px solid #8053a9;
+  border-radius:12px;
+  background:linear-gradient(180deg,rgba(168,85,247,.10),rgba(39,214,255,.04));
+}
+.hint-panel.hidden{display:none}
+.hint-title{
+  color:#d8b4fe;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
+.hint-main{
+  color:#fff;
+  font-size:17px;
+  font-weight:900;
+  line-height:1.4;
+}
+.hint-sub{
+  margin-top:5px;
+  color:var(--muted);
+  font-size:14px;
+  line-height:1.4;
+}
+.hint-btn{
+  margin-top:10px;
+  width:100%;
+}
+
+
+.group-visual{
+  margin-top:12px;
+  display:grid;
+  gap:10px;
+}
+.group-question{
+  font-size:15px;
+  font-weight:900;
+  color:#fff;
+}
+.group-strip{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.group-box{
+  min-width:64px;
+  padding:8px;
+  border:1px solid #4b6a89;
+  border-radius:10px;
+  background:#0b1727;
+  text-align:center;
+  opacity:0;
+  transform:translateY(5px);
+  animation:groupPop .28s ease forwards;
+}
+.group-box.good{
+  border-color:#7ed957;
+  box-shadow:0 0 12px rgba(126,217,87,.12);
+}
+.group-box.bad{
+  border-color:#ff6b6b;
+  background:rgba(255,107,107,.07);
+}
+.group-label{
+  color:var(--muted);
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.6px;
+  margin-bottom:6px;
+}
+.dots{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:4px;
+  max-width:72px;
+  margin:auto;
+}
+.dot{
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:var(--cyan);
+  box-shadow:0 0 5px rgba(39,214,255,.35);
+}
+.group-box.bad .dot{background:#ff6b6b;box-shadow:none}
+.running-total{
+  font-weight:900;
+  color:#dbe7f2;
+}
+.running-total .good-total{color:#7ed957}
+.running-total .bad-total{color:#ff6b6b}
+.put-on-top{
+  margin-top:3px;
+  padding:10px;
+  border-radius:10px;
+  text-align:center;
+  background:rgba(39,214,255,.09);
+  border:1px solid var(--cyan);
+  color:var(--cyan);
+  font-size:18px;
+  font-weight:900;
+  letter-spacing:.7px;
+}
+@keyframes groupPop{
+  to{opacity:1;transform:translateY(0)}
+}
+
+@media(max-width:800px){
+  .mission-dashboard{grid-template-columns:1fr 1fr}
+  .mission-card:first-child{grid-column:1/-1}
+  .layout{grid-template-columns:1fr}
+  .steps{grid-template-columns:1fr 1fr}
+}
+@media(max-width:520px){
+  .quotient-grid,.dividend-grid,.work-row{grid-template-columns:repeat(3,54px)}
+  .quotient-cell,.digit-cell{width:54px;height:52px;font-size:27px}
+  .work-cell{width:54px;height:42px;font-size:23px}
+  .division-row{grid-template-columns:60px auto}
+  .divisor-box{width:58px;font-size:29px}
+  .quotient-grid,.work-wrap{margin-left:60px}
+  .work-row.subtract::before{left:calc(50% - 108px)}
+  .bring-arrow{margin-left:60px}
+}
+</style>
+
+<style id="dragonswood-integration">
+:root{
+  --dw-gold:#f4c95d;
+  --dw-gold2:#ffe996;
+  --dw-violet:#7c2bd5;
+}
+body{
+  background:
+    linear-gradient(rgba(2,4,20,.56),rgba(2,4,20,.72)),
+    url("dragonswood-portal-background.png") center/cover fixed no-repeat,
+    #070819 !important;
+}
+.app{width:min(1120px,95%);margin-top:14px}
+.dw-bar{
+  display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;
+  margin-bottom:12px;padding:10px 14px;border:1px solid rgba(244,201,93,.52);
+  border-radius:12px;background:rgba(7,6,29,.86);backdrop-filter:blur(8px);
+  box-shadow:0 0 20px rgba(91,30,160,.16)
+}
+.dw-mark{font:900 17px Georgia,serif;color:var(--dw-gold2);letter-spacing:.8px}
+.dw-account{font-size:12px;color:#d9cdec;text-align:center}
+.dw-account b{color:#fff0a6}
+.dw-back{
+  color:#fff0a6;text-decoration:none;font-weight:900;border:1px solid #6e3db6;
+  padding:8px 11px;border-radius:8px;background:linear-gradient(90deg,#6721bd,#087da3)
+}
+.dw-reward-strip{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 14px
+}
+.dw-reward{
+  padding:9px;border:1px solid rgba(244,201,93,.30);border-radius:10px;
+  background:rgba(7,10,34,.78);text-align:center
+}
+.dw-reward small{display:block;color:#baaed0;font-weight:900;font-size:9px;letter-spacing:.7px}
+.dw-reward b{display:block;color:#ffe78c;font-size:17px;margin-top:3px}
+.dw-status{
+  margin:0 0 12px;padding:9px 12px;border-radius:10px;border:1px solid #35506d;
+  background:rgba(7,12,31,.80);color:#dce8f5;font-weight:800;font-size:12px
+}
+.dw-status.good{border-color:#61ce8c;color:#bff6ce}
+.dw-status.warn{border-color:#e5b84c;color:#ffe49a}
+.dw-status.error{border-color:#d76372;color:#ffbec7}
+h1{text-shadow:0 2px 10px #000}
+h1 span{color:var(--dw-gold2)}
+.top,.panel,.coach,.memory,.mission-card{
+  background:linear-gradient(180deg,rgba(14,11,48,.92),rgba(4,14,36,.91)) !important;
+  border-color:rgba(118,73,182,.58) !important;
+  backdrop-filter:blur(5px)
+}
+.panel-title,.tag{color:var(--dw-gold2)}
+.tag{background:#6125a9}
+.score{background:linear-gradient(90deg,#f2c95d,#ffe99a)}
+.mission-complete{
+  border-color:var(--dw-gold)!important;
+  background:linear-gradient(180deg,rgba(97,37,169,.28),rgba(5,22,43,.86))!important
+}
+.mission-complete h2{color:#ffe896!important}
+.dw-loot{
+  margin-top:10px;font-size:18px;font-weight:900;color:#ffe896
+}
+@media(max-width:650px){
+  .dw-bar{grid-template-columns:1fr auto}.dw-account{grid-column:1/-1;grid-row:2;text-align:left}
+  .dw-reward-strip{grid-template-columns:1fr 1fr}
+}
+</style>
+
+
+<style id="v27-3-score-clarity">
+.xp-card{
+  border-color:#1ec8ff!important;
+  box-shadow:0 0 0 1px rgba(30,200,255,.16),0 0 18px rgba(30,200,255,.08)!important;
+}
+.mission-card .label{letter-spacing:.8px}
+.mission-card:has(#questScoreValue){
+  border-color:#f4c95d!important;
+  box-shadow:0 0 0 1px rgba(244,201,93,.14),0 0 18px rgba(244,201,93,.08)!important;
+}
+.mission-card:has(#questScoreValue) .value{color:#ffe98a}
+</style>
+
+<style id="v27-4-round-themes">
+body.round-1{--round:#b88756;--round2:#f0d4aa;--rglow:rgba(184,135,86,.25)}
+body.round-2{--round:#59b9e8;--round2:#c8f4ff;--rglow:rgba(65,173,230,.30)}
+body.round-3{--round:#b35cff;--round2:#f3c8ff;--rglow:rgba(179,92,255,.32)}
+body.round-1 .top,body.round-1 .mission-card,body.round-1 .panel,body.round-1 .coach{border-color:rgba(190,145,90,.55)!important}
+body.round-2 .top,body.round-2 .mission-card,body.round-2 .panel,body.round-2 .coach{border-color:rgba(80,190,240,.62)!important;box-shadow:0 0 18px rgba(80,190,240,.08)}
+body.round-3 .top,body.round-3 .mission-card,body.round-3 .panel,body.round-3 .coach{border-color:rgba(190,100,255,.66)!important;box-shadow:0 0 20px rgba(190,100,255,.11)}
+.round-card .value,.round-sub{color:var(--round2)}
+.round-sub{margin-top:5px;font-size:10px;font-weight:1000;text-transform:uppercase;letter-spacing:.7px}
+.round-banner{margin:0 0 12px;padding:10px 14px;border:1px solid var(--round);border-radius:10px;background:linear-gradient(90deg,var(--rglow),rgba(5,8,28,.72));color:var(--round2);font-weight:1000;text-align:center;letter-spacing:.5px}
+</style>
+
+<style id="dw-custom-long-division-style">\n.custom-problem-box{margin:12px 0 16px;padding:14px;border:1px solid rgba(255,226,105,.55);border-radius:12px;background:linear-gradient(90deg,rgba(92,45,193,.15),rgba(2,204,254,.08))}.custom-problem-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}.custom-problem-grid label{display:grid;gap:5px;font-size:11px;font-weight:900}.custom-problem-grid input{padding:11px;border-radius:8px;border:1px solid #34536d;background:#07111f;color:#fff;font-size:20px;font-weight:900}.custom-problem-error{min-height:18px;margin-top:7px;color:#ff9aa8;font-weight:900;font-size:12px}@media(max-width:720px){.custom-problem-grid{grid-template-columns:1fr 1fr}.custom-problem-grid button{grid-column:1/-1}}\n</style>
+
+<style id="long-division-alignment-v35">
+/*
+  The dividend is the source-of-truth for place value.
+  JS measures its real left edge after rendering and stores that offset in --ld-board-left.
+  Quotient and ALL work rows use that identical offset.
+*/
+.division-stage{
+  --ld-cols:3;
+  --ld-board-left:76px;
+  position:relative;
+}
+
+#qGrid,#dGrid,.work-row{
+  display:grid !important;
+  grid-template-columns:repeat(var(--ld-cols),72px) !important;
+  column-gap:2px !important;
+  width:max-content !important;
+  justify-content:start !important;
+}
+
+#qGrid{
+  margin-left:var(--ld-board-left) !important;
+  margin-right:0 !important;
+}
+
+#dGrid{
+  margin-left:0 !important;
+  margin-right:0 !important;
+}
+
+#workWrap{
+  margin-left:var(--ld-board-left) !important;
+  margin-right:0 !important;
+  width:max-content !important;
+}
+
+.work-row{
+  margin-left:0 !important;
+  margin-right:0 !important;
+}
+
+#qGrid .quotient-cell,
+#dGrid .digit-cell,
+.work-row .work-cell{
+  width:72px !important;
+  min-width:72px !important;
+  max-width:72px !important;
+  box-sizing:border-box !important;
+}
+
+/* Keep subtraction mark attached to the exact left edge of the working number. */
+.work-row.subtract::before{
+  left:-30px !important;
+}
+</style>
+
+<link rel="stylesheet" href="v33-integration/css/direct-visual-v11.css?v=1.1"></head>
+<body>
+
+<div class="app">
+  <div class="dw-bar">
+    <div class="dw-mark"><img src="v33-integration/assets/branding/dragonswood-mascot-crest.png" alt="Dragonswood crest" style="width:34px;height:34px;object-fit:contain;vertical-align:middle;margin-right:7px">DRAGONSWOOD • MATH QUEST</div>
+    <div class="dw-account" id="dwAccount">Linking your adventurer record…</div>
+    <a class="dw-back" href="index.html#games">← GAMES</a>
+  </div>
+  <div class="dw-reward-strip">
+    <div class="dw-reward"><small>DRAGONSWOOD LEVEL</small><b id="dwLevel">—</b></div>
+    <div class="dw-reward"><small>PLAYER XP</small><b id="dwAccountXp">—</b></div>
+    <div class="dw-reward"><small>GOLD</small><b id="dwGold">—</b></div>
+    <div class="dw-reward"><small>PER QUEST REWARD</small><b id="dwDailyReward">5–8 XP + 1–2 Gold</b></div>
+  </div>
+  <div class="dw-status" id="dwStatus">Three rounds • 10 problems each. Peasant Training → Warrior Trial → Mage Trial. Each new round palette-swaps and earns slightly more Player XP.</div>
+  <div class="round-banner" id="roundBanner">🪵 ROUND 1 • PEASANT • Reward up to 8 Player XP</div>
+
+  <h1><span>Long Division</span> Quest</h1>
+  <div class="subtitle">DIVIDE • MULTIPLY • SUBTRACT • BRING DOWN</div>
+
+
+  <div class="custom-problem-box">
+    <h3 style="margin:0;color:#ffe896">📝 WORKSHEET / CUSTOM PROBLEM</h3><div style="margin-top:4px;color:#7fe7ff;font-size:11px;font-weight:900">NOW SUPPORTS 1–5 DIGIT DIVIDENDS + 1–5 DIGIT DIVISORS</div>
+    <div class="custom-problem-grid">
+      <label>DIVIDEND<input id="customDividend" type="number" min="1" max="99999" step="1" inputmode="numeric" placeholder="Example: 42875"></label>
+      <label>DIVISOR<input id="customDivisor" type="number" min="1" max="99999" step="1" inputmode="numeric" placeholder="Example: 125"></label>
+      <button class="primary" id="loadCustomProblem" type="button">LOAD CUSTOM PROBLEM</button>
+    </div>
+    <div style="margin-top:8px;color:var(--muted);font-size:11px">Enter a 1–5 digit dividend and a 1–5 digit divisor from your worksheet. Then use the exact same step-by-step Long Division Quest.</div>
+    <div class="custom-problem-error" id="customProblemError"></div>
+  </div>
+  <div class="top">
+    <div>
+      <div style="color:var(--muted);font-size:12px;font-weight:900;letter-spacing:1px">CURRENT MISSION</div>
+      <div style="font-weight:900;margin-top:3px">Solve the problem one aligned step at a time.</div>
+    </div>
+    <div class="score" id="score">SOLVED: 0</div>
+  </div>
+
+  <div class="mission-dashboard">
+    <div class="mission-card xp-card">
+      <div class="label">🐉 PLAYER XP THIS RUN</div>
+      <div class="value"><span id="xpValue">+0 XP</span></div>
+      <div class="xp-track"><div class="xp-fill" id="xpFill"></div></div>
+      <div style="margin-top:6px;color:var(--muted);font-size:11px">This is real Dragonswood level XP earned from this quest.</div>
+    </div>
+    <div class="mission-card">
+      <div class="label">🏆 QUEST HIGH SCORE</div>
+      <div class="value"><span id="questScoreValue">0</span> / 800</div>
+      <div style="margin-top:6px;color:var(--muted);font-size:11px">This is your game score only. It does NOT affect player level.</div>
+    </div>
+    <div class="mission-card">
+      <div class="label">Problems</div>
+      <div class="value"><span id="problemCount">0</span> / 10</div>
+    </div>    <div class="mission-card round-card">
+      <div class="label">ROUND</div>
+      <div class="value"><span id="roundValue">1</span> / 3</div>
+      <div class="round-sub" id="roundName">Peasant Training</div>
+    </div>
+    <div class="mission-card">
+      <div class="label">Accuracy</div>
+      <div class="value" id="accuracyValue">100%</div>
+    </div>
+    <div class="mission-card">
+      <div class="label">Hints Used</div>
+      <div class="value">💡 <span id="hintsUsedValue">0</span></div>
+    </div>
+    <div class="mission-card">
+      <div class="label">Streak</div>
+      <div class="value fire">🔥 <span id="streakValue">0</span></div>
+    </div>
+    <div class="mission-card">
+      <div class="label">Last Rating</div>
+      <div class="value stars" id="starsValue">★★★</div>
+    </div>
+  </div>
+
+  <div class="mission-complete" id="missionComplete">
+    <h2>🏆 MISSION COMPLETE</h2>
+    <p id="missionSummary">You completed the Long Division mission.</p>
+    <span class="level-badge" id="levelBadge">LEVEL 1 • ROOKIE</span><div class="dw-loot" id="dwLoot"></div>
+  </div>
+
+  <div class="steps">
+    <div class="step" id="s-divide"><strong>1. DIVIDE</strong><small>How many groups?</small></div>
+    <div class="step" id="s-multiply"><strong>2. MULTIPLY</strong><small>Multiply back</small></div>
+    <div class="step" id="s-subtract"><strong>3. SUBTRACT</strong><small>Find what's left</small></div>
+    <div class="step" id="s-bring"><strong>4. BRING DOWN</strong><small>Drop next digit</small></div>
+  </div>
+
+  <div class="layout">
+    <div class="panel">
+      <div class="panel-title">Long Division Board</div>
+      <div class="problem">
+        <div class="division-stage">
+          <div class="quotient-grid" id="quotientGrid"></div>
+
+          <div class="division-row">
+            <div class="divisor-box" id="divisorBox"></div>
+            <div class="dividend-grid" id="dividendGrid"></div>
+          </div>
+
+          <div class="work-wrap" id="workWrap"></div>
+        </div>
+        <div class="cell-instruction" id="cellInstruction">
+          Press <b>START STEPS</b>. Then type each digit directly into the highlighted box where it belongs.
+        </div>
+        <div class="cell-feedback" id="cellFeedback" aria-live="polite"></div>
+        <button class="secondary hint-btn" id="hintBtn" type="button">SHOW HINT</button>
+        <div class="hint-panel hidden" id="hintPanel" aria-live="polite">
+          <div class="hint-title">Groups Of Hint</div>
+          <div class="hint-main" id="hintMain"></div>
+          <div class="hint-sub" id="hintSub"></div>
+          <div class="group-visual" id="groupVisual"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="coach">
+        <span class="tag">MATH COACH</span>
+        <h2 id="stepTitle">READY?</h2>
+        <p id="stepText">Press <b>Start Steps</b> and we will solve the problem together.</p>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Controls</div>
+        <div class="controls">
+          <button class="primary" id="next">START STEPS</button>
+          <button class="secondary" id="new">NEW RANDOM PROBLEM</button>
+          <div class="progress" id="progress">STEP 0</div>
+        </div>
+      </div>
+
+      <div class="memory">
+        <b>CORE SEQUENCE</b>
+        <div class="cycle"><span>D</span> → M → S → B</div>
+        <strong>Divide → Multiply → Subtract → Bring Down</strong>
+        <div class="note">Every number is locked into its proper place-value column.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const qGrid = document.getElementById('quotientGrid');
+  const dGrid = document.getElementById('dividendGrid');
+  const divisorBox = document.getElementById('divisorBox');
+  const workWrap = document.getElementById('workWrap');
+  const divisionStage = document.querySelector('.division-stage');
+  const nextBtn = document.getElementById('next');
+  const newBtn = document.getElementById('new');
+  const stepTitle = document.getElementById('stepTitle');
+  const stepText = document.getElementById('stepText');
+  const progress = document.getElementById('progress');
+  const scoreEl = document.getElementById('score');
+  const xpValue = document.getElementById('xpValue');
+  const xpFill = document.getElementById('xpFill');
+  const questScoreValue = document.getElementById('questScoreValue');
+  const problemCount = document.getElementById('problemCount');
+  const roundValue = document.getElementById('roundValue');
+  const roundName = document.getElementById('roundName');
+  const roundBanner = document.getElementById('roundBanner');
+  const accuracyValue = document.getElementById('accuracyValue');
+  const hintsUsedValue = document.getElementById('hintsUsedValue');
+  const streakValue = document.getElementById('streakValue');
+  const starsValue = document.getElementById('starsValue');
+  const missionComplete = document.getElementById('missionComplete');
+  const missionSummary = document.getElementById('missionSummary');
+  const levelBadge = document.getElementById('levelBadge');
+  const cellInstruction = document.getElementById('cellInstruction');
+  const cellFeedback = document.getElementById('cellFeedback');
+  const hintBtn = document.getElementById('hintBtn');
+  const hintPanel = document.getElementById('hintPanel');
+  const hintMain = document.getElementById('hintMain');
+  const hintSub = document.getElementById('hintSub');
+  const groupVisual = document.getElementById('groupVisual');
+  const customDividend=document.getElementById('customDividend'),customDivisor=document.getElementById('customDivisor'),loadCustomProblemBtn=document.getElementById('loadCustomProblem'),customProblemError=document.getElementById('customProblemError');
+
+  const stepEls = {
+    divide: document.getElementById('s-divide'),
+    multiply: document.getElementById('s-multiply'),
+    subtract: document.getElementById('s-subtract'),
+    bring: document.getElementById('s-bring')
+  };
+
+  let problem, tasks=[], taskIndex=-1, solved=0, credited=false;
+  let board = { quotient:['','',''], rows:[] };
+
+  const PROBLEMS_PER_ROUND = 10;
+  const TOTAL_ROUNDS = 3;
+  const SCORE_GOAL_PER_ROUND = 800;
+  let xp = 0;
+  let missionSolved = 0;
+  let currentRound = 1;
+  let roundSolved = 0;
+  let roundScoreStart = 0;
+  let streak = 0;
+  let totalAttempts = 0;
+  let correctAttempts = 0;
+  let problemMistakes = 0;
+  let taskHadMistake = false;
+  let missionFinished = false;
+  let hintsUsed = 0;
+  let hintCountedForTask = false;
+  let dragonswoodMissionReported = false;
+
+  function levelInfo(){
+    const roundScore=xp-roundScoreStart;
+    if(roundSolved >= PROBLEMS_PER_ROUND && roundScore >= SCORE_GOAL_PER_ROUND) return {num:4,name:'MASTER'};
+    if(roundScore >= 550) return {num:3,name:'EXPERT'};
+    if(roundScore >= 300) return {num:2,name:'SKILLED'};
+    return {num:1,name:'ROOKIE'};
+  }
+  function roundXpTarget(round=currentRound){
+    return round===1?8:round===2?10:12;
+  }
+  function playerXpThisRun(){
+    const base=Math.floor(roundSolved/2);
+    if(roundSolved < PROBLEMS_PER_ROUND) return base;
+    const accuracy=totalAttempts===0 ? 1 : (correctAttempts/totalAttempts);
+    let bonus=0;
+    if(accuracy>=0.90) bonus+=2;
+    else if(accuracy>=0.75) bonus+=1;
+    if(hintsUsed===0) bonus+=1;
+    return Math.min(roundXpTarget(),base+bonus+(currentRound-1));
+  }
+  function roundThemeInfo(round=currentRound){
+    if(round===1)return {name:"Peasant Training",icon:"🪵",label:"PEASANT"};
+    if(round===2)return {name:"Warrior Trial",icon:"⚔️",label:"WARRIOR"};
+    return {name:"Mage Trial",icon:"🔮",label:"MAGE"};
+  }
+  function applyRoundTheme(){
+    document.body.classList.remove("round-1","round-2","round-3");
+    document.body.classList.add(`round-${currentRound}`);
+    const t=roundThemeInfo();
+    if(roundValue)roundValue.textContent=currentRound;
+    if(roundName)roundName.textContent=t.name;
+    if(roundBanner)roundBanner.textContent=`${t.icon} ROUND ${currentRound} • ${t.label} • Reward up to ${roundXpTarget()} Player XP`;
+  }
+
+  function updateMissionUI(){
+    const runXp=playerXpThisRun();
+    xpValue.textContent=`+${runXp} XP`;
+    xpFill.style.width=Math.min(100,(runXp/8)*100)+'%';
+    questScoreValue.textContent=xp-roundScoreStart;
+    problemCount.textContent=roundSolved;
+    applyRoundTheme();
+    const acc=totalAttempts===0 ? 100 : Math.round((correctAttempts/totalAttempts)*100);
+    accuracyValue.textContent=acc+'%';
+    hintsUsedValue.textContent=hintsUsed;
+    streakValue.textContent=streak;
+    const level=levelInfo();
+    levelBadge.textContent=`LEVEL ${level.num} • ${level.name}`;
+
+    if(roundSolved>=PROBLEMS_PER_ROUND){
+      missionFinished=true;
+      missionComplete.classList.add('show');
+      missionSummary.textContent=`Round ${currentRound} complete • ${roundSolved}/${PROBLEMS_PER_ROUND} problems • +${playerXpThisRun()} Dragonswood Player XP • Quest High Score: ${xp-roundScoreStart}/${SCORE_GOAL_PER_ROUND}.`;
+      if(!dragonswoodMissionReported){
+        dragonswoodMissionReported=true;
+        const accuracy=totalAttempts===0?1:(correctAttempts/totalAttempts);
+        window.dispatchEvent(new CustomEvent("dragonswood-long-division-complete",{detail:{
+          missionXp:xp,
+          playerXpEarned:playerXpThisRun(),
+          round:currentRound,
+          roundScore:xp-roundScoreStart,
+          solved:missionSolved,
+          totalAttempts,
+          correctAttempts,
+          accuracy,
+          hintsUsed,
+          streak
+        }}));
+      }
+    }
+  }
+
+  function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+  function cloneRows(rows){ return rows.map(r=>({...r,cells:[...r.cells]})); }
+
+  function makeProblem(custom=null){
+    let divisor, quotient, dividend;
+    if(custom){
+      dividend=Number(custom.dividend); divisor=Number(custom.divisor); quotient=Math.floor(dividend/divisor);
+    }else{
+      divisor=rand(2,9); quotient=rand(12,99); dividend=divisor*quotient;
+      while(dividend<100 || dividend>999){ divisor=rand(2,9); quotient=rand(12,99); dividend=divisor*quotient; }
+    }
+    problem={divisor,quotient,dividend};
+    board={quotient:Array(String(dividend).length).fill(''),rows:[]};
+    tasks=buildTasks(problem);
+    taskIndex=-1; credited=false; problemMistakes=0; taskHadMistake=false;
+    cellFeedback.textContent=''; hintPanel.classList.add('hidden'); groupVisual.innerHTML=''; hintBtn.textContent='SHOW HINT';
+    stepTitle.textContent='READY?';
+    stepText.innerHTML=custom?'Your worksheet problem is loaded. Press <b>Start Steps</b> and solve it using the same Long Division Quest process.':'Press <b>Start Steps</b>. You will type every digit directly into the long-division board.';
+    cellInstruction.innerHTML='Press <b>START STEPS</b>. Then type each digit directly into the highlighted box where it belongs.';
+    progress.textContent='STEP 0'; nextBtn.textContent='START STEPS'; nextBtn.disabled=false; clearSteps(); renderBase(); renderBoard(); updateMissionUI();
+  }
+  function loadCustomProblem(){
+    const dividend=Number(customDividend.value),divisor=Number(customDivisor.value);customProblemError.textContent='';
+    if(!Number.isInteger(dividend)||dividend<1||dividend>99999){customProblemError.textContent='Enter a dividend from 1 to 99,999.';return;}
+    if(!Number.isInteger(divisor)||divisor<1||divisor>99999){customProblemError.textContent='Enter a divisor from 1 to 99,999.';return;}
+    if(divisor>dividend){customProblemError.textContent='For this long-division board, the divisor must be less than or equal to the dividend.';return;}makeProblem({dividend,divisor});const r=dividend%divisor;customProblemError.style.color='var(--green)';customProblemError.textContent=`Loaded: ${dividend} ÷ ${divisor}${r?` • remainder ${r}`:''}`;
+  }
+
+  function syncLongDivisionColumns(){
+    if(!divisionStage || !dGrid || !qGrid || !workWrap) return;
+
+    const cols=String(problem?.dividend ?? '').length || 1;
+    divisionStage.style.setProperty('--ld-cols', String(cols));
+    dGrid.style.setProperty('--ld-cols', String(cols));
+    qGrid.style.setProperty('--ld-cols', String(cols));
+
+    /*
+      Force layout, then measure the ACTUAL dividend left edge.
+      This survives 1–5 digits, responsive widths, divisor size, and browser zoom.
+    */
+    const stageRect=divisionStage.getBoundingClientRect();
+    const dividendRect=dGrid.getBoundingClientRect();
+    const exactLeft=Math.max(0, dividendRect.left-stageRect.left);
+
+    divisionStage.style.setProperty('--ld-board-left', `${exactLeft}px`);
+    workWrap.style.setProperty('--ld-board-left', `${exactLeft}px`);
+
+    // Existing work rows inherit the same column count immediately.
+    workWrap.querySelectorAll('.work-row').forEach(row=>{
+      row.style.setProperty('--ld-cols', String(cols));
+    });
+  }
+
+  function renderBase(){
+    divisorBox.textContent=problem.divisor;
+    dGrid.innerHTML='';
+    const ldCols=String(problem.dividend).length;
+    divisionStage?.style.setProperty('--ld-cols',ldCols);
+    dGrid.style.setProperty('--ld-cols',ldCols);
+    qGrid.style.setProperty('--ld-cols',ldCols);
+    String(problem.dividend).split('').forEach(d=>{
+      const c=document.createElement('div');
+      c.className='digit-cell';
+      c.textContent=d;
+      dGrid.appendChild(c);
+    });
+    syncLongDivisionColumns();
+  }
+
+  function buildTasks(p){
+    const digits=String(p.dividend).split('').map(Number);
+    const result=[];
+    let current=0, started=false;
+    const width=digits.length;
+    const qCells=Array(width).fill('');
+    const rows=[];
+
+    for(let i=0;i<digits.length;i++){
+      current=current*10+digits[i];
+      if(!started && current<p.divisor) continue;
+      started=true;
+
+      const q=Math.floor(current/p.divisor);
+      const product=q*p.divisor;
+      const remainder=current-product;
+
+      result.push({
+        type:'divide', target:'quotient', rowIndex:null, col:i,
+        digit:String(q),
+        prompt:`DIVIDE: How many times does ${p.divisor} go into ${current}? Type that digit in the highlighted quotient box.`,
+        hint:`Find the largest multiple of ${p.divisor} that does not go over ${current}.`
+      });
+      qCells[i]=String(q);
+
+      const productCells=Array(width).fill('');
+      String(product).split('').reverse().forEach((ch,k)=>{
+        const pos=i-k; if(pos>=0) productCells[pos]=ch;
+      });
+      const productRow=rows.length;
+      rows.push({kind:'product',cells:Array(width).fill(''),subtract:true});
+      const productDigits=String(product).split('');
+      const productStart=i-productDigits.length+1;
+      productDigits.forEach((ch,k)=>{
+        result.push({
+          type:'multiply',target:'row',rowIndex:productRow,col:productStart+k,digit:ch,
+          prompt:k===0
+            ? `MULTIPLY: ${q} × ${p.divisor} = ${product}. Type ${productDigits.length>1?'each digit of the product':'the product'} into the highlighted box${productDigits.length>1?'es from left to right':''}.`
+            : `Keep placing the product ${product}, one digit at a time.`,
+          hint:`The product is ${q} × ${p.divisor}.`
+        });
+      });
+
+      const remCells=Array(width).fill('');
+      String(remainder).split('').reverse().forEach((ch,k)=>{
+        const pos=i-k; if(pos>=0) remCells[pos]=ch;
+      });
+      const remRow=rows.length;
+      rows.push({kind:'remainder',cells:Array(width).fill('')});
+      const remDigits=String(remainder).split('');
+      const remStart=i-remDigits.length+1;
+      remDigits.forEach((ch,k)=>{
+        result.push({
+          type:'subtract',target:'row',rowIndex:remRow,col:remStart+k,digit:ch,
+          prompt:k===0
+            ? `SUBTRACT: ${current} − ${product} = ? Type the remainder into the correct highlighted place-value box.`
+            : `Finish placing the remainder, one digit at a time.`,
+          hint:`Subtract ${product} from ${current}.`
+        });
+      });
+
+      if(i<digits.length-1){
+        const nextDigit=String(digits[i+1]);
+        const bringRow=rows.length;
+        rows.push({kind:'bring',cells:Array(width).fill(''),arrow:true});
+
+        // If remainder is nonzero, carry its digit(s) into the new working row first.
+        if(remainder!==0){
+          const rDigits=String(remainder).split('');
+          const rStart=i-rDigits.length+1;
+          rDigits.forEach((ch,k)=>{
+            result.push({
+              type:'bring',target:'row',rowIndex:bringRow,col:rStart+k,digit:ch,
+              prompt:`BRING DOWN: Keep the remainder ${remainder} in its place-value position. Type the highlighted digit.`,
+              hint:`Copy the remainder straight down before bringing down the next digit.`
+            });
+          });
+        }
+
+        result.push({
+          type:'bring',target:'row',rowIndex:bringRow,col:i+1,digit:nextDigit,
+          prompt:`BRING DOWN: Bring down the next digit, ${nextDigit}. Type it in the highlighted box directly below its original column.`,
+          hint:`The digit comes straight down. Do not move it left or right.`
+        });
+
+        current=remainder;
+      }
+    }
+
+    return result;
+  }
+
+  function ensureRowsForTask(task){
+    if(task.target!=='row') return;
+    while(board.rows.length<=task.rowIndex){
+      // Determine row type from the first task referencing this row.
+      const t=tasks.find(x=>x.target==='row' && x.rowIndex===board.rows.length);
+      board.rows.push({
+        kind:t ? t.type==='multiply'?'product':t.type==='subtract'?'remainder':'bring' : 'remainder',
+        cells:Array(String(problem.dividend).length).fill(''),
+        subtract:t ? t.type==='multiply' : false,
+        arrow:t ? t.type==='bring' : false
+      });
+    }
+  }
+
+  function renderBoard(activeTask=null){
+    qGrid.innerHTML='';
+    board.quotient.forEach((v,col)=>{
+      const c=document.createElement('div');
+      c.className='quotient-cell'+(v===''?' blank':'');
+      if(activeTask && activeTask.target==='quotient' && activeTask.col===col){
+        c.classList.remove('blank');
+        c.appendChild(makeCellInput(activeTask));
+      }else{
+        c.textContent=v || '0';
+      }
+      qGrid.appendChild(c);
+    });
+
+    workWrap.innerHTML='';
+    board.rows.forEach((r,rowIndex)=>{
+      if(r.arrow){
+        const a=document.createElement('div');
+        a.className='bring-arrow';
+        a.textContent='↓';
+        workWrap.appendChild(a);
+      }
+      const row=document.createElement('div');
+      row.className='work-row '+r.kind+(r.subtract?' subtract':'');
+      row.style.setProperty('--ld-cols',String(problem.dividend).length);
+      r.cells.forEach((v,col)=>{
+        const c=document.createElement('div');
+        const active=activeTask && activeTask.target==='row' && activeTask.rowIndex===rowIndex && activeTask.col===col;
+        c.className='work-cell '+((v===''&&!active)?'empty':'filled');
+        if(active){
+          c.appendChild(makeCellInput(activeTask));
+        }else{
+          c.textContent=v;
+        }
+        row.appendChild(c);
+      });
+      workWrap.appendChild(row);
+      syncLongDivisionColumns();
+    });
+  }
+
+  function makeCellInput(task){
+    const input=document.createElement('input');
+    input.type='text';
+    input.inputMode='numeric';
+    input.maxLength=1;
+    input.className='student-cell-input';
+    input.setAttribute('aria-label','Enter this long division digit');
+    input.addEventListener('input',()=>{
+      input.value=input.value.replace(/\D/g,'').slice(0,1);
+      if(input.value.length===1) validateCell(input,task);
+    });
+    input.addEventListener('keydown',e=>{
+      if(e.key==='Enter' && input.value) validateCell(input,task);
+    });
+    setTimeout(()=>input.focus(),0);
+    return input;
+  }
+
+  function validateCell(input,task){
+    if(input.dataset.dwResolved==='1'||input.dataset.dwValidating==='1')return;input.dataset.dwValidating='1';
+    totalAttempts++;
+
+    if(input.value===task.digit){
+      correctAttempts++;input.dataset.dwResolved='1';input.disabled=true;
+      const earned = taskHadMistake ? 2 : 5;
+      xp += earned;
+
+      input.classList.remove('wrong');
+      input.classList.add('correct');
+      cellFeedback.textContent=`✓ CORRECT — +${earned} XP`;
+      cellFeedback.style.color='#7ed957';
+
+      if(task.target==='quotient'){
+        board.quotient[task.col]=task.digit;
+      }else{
+        ensureRowsForTask(task);
+        board.rows[task.rowIndex].cells[task.col]=task.digit;
+      }
+
+      updateMissionUI();
+
+      setTimeout(()=>{
+        taskIndex++;
+        if(taskIndex>=tasks.length){
+          finishProblem();
+        }else{
+          presentTask();
+        }
+      },350);
+    }else{
+      problemMistakes++;
+      taskHadMistake=true;
+      input.classList.remove('wrong');
+      void input.offsetWidth;
+      input.classList.add('wrong');
+      cellFeedback.textContent='✕ NOT THERE. TRY THAT DIGIT AGAIN.';
+      cellFeedback.style.color='#ff6b6b';
+      stepText.textContent=task.hint;
+      input.value='';
+      input.dataset.dwValidating='0';
+      input.focus();
+      updateMissionUI();
+    }
+  }
+
+  function showHint(){
+    const task=tasks[taskIndex];
+    if(!task || task.type==='done') return;
+
+    hintPanel.classList.remove('hidden');
+    hintBtn.textContent='HINT SHOWN • NO-HINT BONUS USED';
+    groupVisual.innerHTML='';
+
+    // Track support use separately from accuracy. Reopening the same step's
+    // hint does not count again.
+    if(!hintCountedForTask){
+      hintsUsed++;
+      hintCountedForTask=true;
+      updateMissionUI();
+    }
+
+    if(task.type==='divide'){
+      const divisor=problem.divisor;
+      const match=task.prompt.match(/go into (\d+)/);
+      const current=match ? Number(match[1]) : null;
+      const q=Number(task.digit);
+
+      if(current!==null){
+        const product=divisor*q;
+        const nextProduct=divisor*(q+1);
+
+        hintMain.textContent=`${q} groups of ${divisor} = ${product}`;
+        hintSub.textContent=`Watch the groups build until we get as close as possible to ${current} without going over.`;
+
+        const question=document.createElement('div');
+        question.className='group-question';
+        question.textContent=`How many groups of ${divisor} fit inside ${current}?`;
+        groupVisual.appendChild(question);
+
+        const strip=document.createElement('div');
+        strip.className='group-strip';
+        groupVisual.appendChild(strip);
+
+        // Show all fitting groups, then one extra red "too many" group.
+        for(let g=1; g<=q+1; g++){
+          const box=document.createElement('div');
+          box.className='group-box '+(g<=q?'good':'bad');
+          box.style.animationDelay=((g-1)*180)+'ms';
+
+          const label=document.createElement('div');
+          label.className='group-label';
+          label.textContent=`GROUP ${g}`;
+          box.appendChild(label);
+
+          const dots=document.createElement('div');
+          dots.className='dots';
+          const visualDots=Math.min(divisor,30);
+          for(let d=0; d<visualDots; d++){
+            const dot=document.createElement('span');
+            dot.className='dot';
+            dots.appendChild(dot);
+          }
+          if(divisor>30){
+            const more=document.createElement('span');
+            more.className='group-label';
+            more.textContent=`… = ${divisor}`;
+            dots.appendChild(more);
+          }
+          box.appendChild(dots);
+          strip.appendChild(box);
+        }
+
+        const total=document.createElement('div');
+        total.className='running-total';
+        total.innerHTML=`${q} × ${divisor} = <span class="good-total">${product} ✓</span> &nbsp; | &nbsp; ${q+1} × ${divisor} = <span class="bad-total">${nextProduct} ✕ too many</span>`;
+        groupVisual.appendChild(total);
+
+        const result=document.createElement('div');
+        result.className='put-on-top';
+        result.textContent=`↑ PUT ${q} ON TOP`;
+        groupVisual.appendChild(result);
+      }else{
+        hintMain.textContent=`Think in groups of ${divisor}.`;
+        hintSub.textContent=task.hint;
+      }
+    }else if(task.type==='multiply'){
+      const m=task.hint.match(/product is (\d+) × (\d+)/);
+      if(m){
+        const a=Number(m[1]), b=Number(m[2]);
+        hintMain.textContent=`${a} groups of ${b} = ${a*b}`;
+        hintSub.textContent=`That product is written underneath the number you just divided.`;
+
+        const strip=document.createElement('div');
+        strip.className='group-strip';
+        for(let g=1; g<=a; g++){
+          const box=document.createElement('div');
+          box.className='group-box good';
+          box.style.animationDelay=((g-1)*180)+'ms';
+          const label=document.createElement('div');
+          label.className='group-label';
+          label.textContent=`GROUP ${g}`;
+          box.appendChild(label);
+          const dots=document.createElement('div');
+          dots.className='dots';
+          const visualDots=Math.min(b,30);
+          for(let d=0; d<visualDots; d++){
+            const dot=document.createElement('span');
+            dot.className='dot';
+            dots.appendChild(dot);
+          }
+          if(b>30){
+            const more=document.createElement('span');
+            more.className='group-label';
+            more.textContent=`… = ${b}`;
+            dots.appendChild(more);
+          }
+          box.appendChild(dots);
+          strip.appendChild(box);
+        }
+        groupVisual.appendChild(strip);
+
+        const total=document.createElement('div');
+        total.className='running-total';
+        total.innerHTML=`${a} groups of ${b} = <span class="good-total">${a*b}</span>`;
+        groupVisual.appendChild(total);
+      }else{
+        hintMain.textContent='Use the quotient digit as the number of groups.';
+        hintSub.textContent=task.hint;
+      }
+    }else if(task.type==='subtract'){
+      hintMain.textContent='Now find what is left.';
+      hintSub.textContent=task.hint;
+    }else if(task.type==='bring'){
+      hintMain.textContent='Bring the next digit straight down.';
+      hintSub.textContent=task.hint;
+    }
+  }
+
+  function clearSteps(){
+    Object.values(stepEls).forEach(el=>el.classList.remove('active'));
+  }
+
+  function start(){
+    if(taskIndex!==-1) return;
+    taskIndex=0;
+    nextBtn.disabled=true;
+    nextBtn.textContent='WORK IN THE HIGHLIGHTED BOX';
+    presentTask();
+  }
+
+  function presentTask(){
+    const task=tasks[taskIndex];
+    taskHadMistake=false;
+    hintCountedForTask=false;
+    ensureRowsForTask(task);
+    clearSteps();
+    if(stepEls[task.type]) stepEls[task.type].classList.add('active');
+
+    stepTitle.textContent=task.type.toUpperCase();
+    stepText.textContent=task.prompt;
+    cellInstruction.textContent=task.prompt;
+    cellFeedback.textContent='';
+    hintPanel.classList.add('hidden');
+    groupVisual.innerHTML='';
+    hintBtn.textContent='SHOW HINT';
+    progress.textContent=`DIGIT ${taskIndex+1} OF ${tasks.length}`;
+
+    renderBoard(task);
+  }
+
+  function finishProblem(){
+    clearSteps();
+    renderBoard();
+
+    let stars='★';
+    if(problemMistakes===0) stars='★★★';
+    else if(problemMistakes===1) stars='★★';
+
+    let bonus=20;
+    let bonusText='+20 high-score points';
+
+    if(problemMistakes===0){
+      streak++;
+      bonus+=15;
+      bonusText+=' +15 perfect bonus';
+      if(streak%3===0){
+        bonus+=25;
+        bonusText+=' +25 streak bonus';
+      }
+    }else{
+      streak=0;
+    }
+
+    xp+=bonus;
+    starsValue.textContent=stars;
+    missionSolved++;
+    roundSolved++;
+
+    stepTitle.textContent='PROBLEM COMPLETE';
+    stepText.textContent=`You placed every digit yourself. Rating: ${stars}`;
+    const finalRemainder=problem.dividend%problem.divisor;
+    cellInstruction.textContent=finalRemainder?`${bonusText}. Check: ${problem.quotient} × ${problem.divisor} + ${finalRemainder} = ${problem.dividend}.`:`${bonusText}. Check: ${problem.quotient} × ${problem.divisor} = ${problem.dividend}.`;
+    cellFeedback.textContent=`✓ ${stars}  •  +1 PLAYER XP  •  +${bonus} HIGH-SCORE POINTS`;
+    cellFeedback.style.color='#7ed957';
+    progress.textContent=`PROBLEM ${roundSolved} OF ${PROBLEMS_PER_ROUND} COMPLETE`;
+    nextBtn.textContent='SOLVED';
+    nextBtn.disabled=true;
+
+    if(!credited){
+      solved++;
+      credited=true;
+      scoreEl.textContent=`SOLVED: ${solved}`;
+    }
+
+    updateMissionUI();
+
+    if(roundSolved < PROBLEMS_PER_ROUND){
+      newBtn.textContent='NEXT MISSION PROBLEM';
+    }else{
+      newBtn.textContent=currentRound<TOTAL_ROUNDS?'START NEXT ROUND':'START NEW 3-ROUND QUEST';
+    }
+  }
+
+  hintBtn.addEventListener('click',showHint);
+  nextBtn.addEventListener('click',start);
+  loadCustomProblemBtn.addEventListener('click',loadCustomProblem);
+  [customDividend,customDivisor].forEach(el=>el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();loadCustomProblem();}}));
+
+  newBtn.addEventListener('click',()=>{
+    if(missionFinished){
+      missionFinished=false;
+      dragonswoodMissionReported=false;
+      missionComplete.classList.remove('show');
+      if(currentRound<TOTAL_ROUNDS){
+        currentRound++;
+        roundSolved=0;
+        roundScoreStart=xp;
+        streak=0;
+        totalAttempts=0;
+        correctAttempts=0;
+        hintsUsed=0;
+        starsValue.textContent='★★★';
+        newBtn.textContent='NEW RANDOM PROBLEM';
+        applyRoundTheme();
+      }else{
+        currentRound=1;
+        xp=0;
+        missionSolved=0;
+        roundSolved=0;
+        roundScoreStart=0;
+        streak=0;
+        totalAttempts=0;
+        correctAttempts=0;
+        hintsUsed=0;
+        starsValue.textContent='★★★';
+        newBtn.textContent='NEW RANDOM PROBLEM';
+        applyRoundTheme();
+      }
+    }
+    makeProblem();
+  });
+
+  applyRoundTheme();
+  updateMissionUI();
+  window.addEventListener('resize',syncLongDivisionColumns);
+
+  makeProblem();
+})();
+</script>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import {getFirestore,doc,getDoc,writeBatch,serverTimestamp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig={"apiKey":"AIzaSyC918WJoGQgxRKsqcz-3bXI7iZWv_1bwYE","authDomain":"dragonswood-9289e.firebaseapp.com","projectId":"dragonswood-9289e","storageBucket":"dragonswood-9289e.firebasestorage.app","messagingSenderId":"1064477064695","appId":"1:1064477064695:web:283e1016ee2303d39042f2","measurementId":"G-LPRLDGVBD2"};
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const DOMAIN="explore.academy";
+const XP_THRESHOLDS=[0,200,450,750,1100,1500,1950,2450,3000,3600,4250,4950,5700,6500,7350,8250,9200,10200,11100,12000];
+let currentUser=null,currentProfile=null;
+const DRAGONSWOOD_DAILY_XP_CAP=150;
+function profileDailyXp(p){
+  const today=localDateKey();
+  return String(p?.dailyXpDate||"")===today?Math.max(0,Math.min(DRAGONSWOOD_DAILY_XP_CAP,Number(p?.dailyXpEarned||0))):0;
+}
+
+const $=id=>document.getElementById(id);
+function localDateKey(){
+  const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+function levelFromXp(xp){
+  xp=Math.max(0,Number(xp||0));let level=1;
+  for(let i=0;i<XP_THRESHOLDS.length;i++)if(xp>=XP_THRESHOLDS[i])level=i+1;
+  return Math.min(20,level);
+}
+function setStatus(text,type=""){
+  $("dwStatus").textContent=text;
+  $("dwStatus").className=`dw-status ${type}`.trim();
+}
+function renderAccount(){
+  if(!currentProfile)return;
+  const xp=Number(currentProfile.xp||0),gold=Number(currentProfile.gold||0);
+  $("dwLevel").textContent=levelFromXp(xp);
+  $("dwAccountXp").textContent=xp.toLocaleString();
+  $("dwGold").textContent=gold.toLocaleString();
+  const daily=profileDailyXp(currentProfile);
+  $("dwAccount").dataset.dailyXp=`${daily} / 150`;
+  const name=currentProfile.firstName||currentUser?.email||"Dragonswood Adventurer";
+  $("dwAccount").innerHTML=`Connected as <b>${name}</b> • Daily XP ${profileDailyXp(currentProfile)} / 150 • Academic rewards save to Dragonswood`;
+  $("dwDailyReward").textContent=profileDailyXp(currentProfile)>=DRAGONSWOOD_DAILY_XP_CAP?"Gold Only Today":"5–8 XP + 1–2 Gold";
+}
+
+onAuthStateChanged(auth,async user=>{
+  currentUser=user;
+  if(!user){
+    setStatus("Open this game from your signed-in Dragonswood portal so your results and rewards can save.","warn");
+    $("dwAccount").textContent="Not signed in to Dragonswood";
+    return;
+  }
+  if(!String(user.email||"").toLowerCase().endsWith("@"+DOMAIN)){
+    setStatus("This game only connects rewards to an @explore.academy student account.","error");
+    return;
+  }
+  try{
+    const studentSnap=await getDoc(doc(db,"students",user.uid));
+    if(!studentSnap.exists()){
+      setStatus("Your Dragonswood character must be created before the game can award account XP and Gold.","warn");
+      return;
+    }
+    currentProfile=studentSnap.data();
+    renderAccount();
+    const daily=profileDailyXp(currentProfile);
+    setStatus(daily>=DRAGONSWOOD_DAILY_XP_CAP
+      ?`Connected. You have reached today's ${DRAGONSWOOD_DAILY_XP_CAP} Player XP cap. You can still practice Long Division and earn Gold.`
+      :"Connected. Every completed 5-problem quest can earn Player XP until you reach today's 150 XP cap.","good");
+  }catch(err){
+    console.error(err);
+    setStatus("The reward ledger could not be reached. You can keep practicing; reconnect before claiming rewards.","error");
+  }
+});
+
+let dwLongDivisionRunId=(crypto.randomUUID?.()||`${Date.now()}-${Math.random()}`).replace(/[^a-zA-Z0-9_-]/g,'').slice(0,48),dwLastLongDivisionRound=0;
+window.addEventListener("dragonswood-long-division-complete",async event=>{
+  const d=event.detail||{};
+  if(currentProfile && Number(currentProfile.hp||0)<=0){
+    const loot=$("dwLoot");
+    if(loot)loot.textContent="💀 KNOCKED OUT • Practice complete, but no Player XP or Gold can be earned until revival.";
+    setStatus("You completed the math quest, but knocked-out players cannot earn XP or Gold until they revive with 1 HP.","warn");
+    return;
+  }
+  const accuracy=Math.max(0,Math.min(1,Number(d.accuracy||0)));
+  const rewardXp=Math.max(5,Math.min(12,Number(d.playerXpEarned||5)));
+  const rewardGold=Math.max(1,Math.min(2,1+(accuracy>=0.90&&Number(d.hintsUsed||0)===0?1:0)));
+  const dailyBefore=profileDailyXp(currentProfile);
+  const dailyRemaining=Math.max(0,DRAGONSWOOD_DAILY_XP_CAP-dailyBefore);
+  const cappedRewardXp=Math.min(rewardXp,dailyRemaining);
+  const loot=$("dwLoot");
+
+  if(!currentUser||!currentProfile){
+    loot.textContent="Mission complete • Sign in through Dragonswood to save account rewards.";
+    return;
+  }
+  const rewardRound=Math.max(1,Number(d.round||1));if(rewardRound===1&&dwLastLongDivisionRound>=3)dwLongDivisionRunId=(crypto.randomUUID?.()||`${Date.now()}-${Math.random()}`).replace(/[^a-zA-Z0-9_-]/g,'').slice(0,48);dwLastLongDivisionRound=rewardRound;
+  const runId=String(d.runId||dwLongDivisionRunId||'legacy').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,48)||'legacy';
+  const claimId=`${currentUser.uid}_long_division_${localDateKey()}_custom_${runId}_r${rewardRound}`;
+  try{
+    const latest=await getDoc(doc(db,"students",currentUser.uid));
+    if(!latest.exists())throw new Error("Student profile not found");
+    const p=latest.data(),oldXp=Number(p.xp||0),oldGold=Number(p.gold||0),gw=(()=>{const raw=p.dailyGoldWindowStartedAt,start=raw?.toMillis?.()||Number(raw?.seconds||0)*1000||0,reset=!start||Date.now()-start>=86400000;return{earned:reset?0:Math.max(0,Math.min(30,Number(p.dailyGoldEarned||0))),reset}})(),actualGold=Math.min(rewardGold,Math.max(0,30-gw.earned));
+    const claimRef=doc(db,"gameResults",claimId);if((await getDoc(claimRef)).exists()){loot.textContent="🐉 This quest reward was already saved.";return}
+    const batch=writeBatch(db);
+
+    batch.set(claimRef,{
+      studentId:currentUser.uid,
+      studentEmail:currentUser.email||"",
+      gameId:"long_division_quest",
+      gameName:"Long Division Quest",
+      status:"complete",
+      dateKey:localDateKey(),
+      problemsSolved:PROBLEMS_PER_ROUND,
+      round:Number(d.round||1),
+      roundScore:Number(d.roundScore||0),
+      missionXp:Number(d.missionXp||0),
+      accuracy:Math.round(accuracy*100),
+      hintsUsed:Number(d.hintsUsed||0),
+      totalAttempts:Number(d.totalAttempts||0),
+      correctAttempts:Number(d.correctAttempts||0),
+      runId,
+      xpAward:cappedRewardXp,
+      goldAward:actualGold,
+      createdAt:serverTimestamp()
+    });
+
+    batch.update(doc(db,"students",currentUser.uid),{
+      xp:oldXp+cappedRewardXp,
+      gold:oldGold+actualGold,
+      dailyXpDate:localDateKey(),
+      dailyXpEarned:dailyBefore+cappedRewardXp,
+      dailyGoldEarned:gw.earned+actualGold,dailyGoldWindowStartedAt:gw.reset?serverTimestamp():p.dailyGoldWindowStartedAt,
+      lastGameClaimId:claimId,
+      updatedAt:serverTimestamp()
+    });
+
+    await batch.commit();
+    currentProfile={...p,xp:oldXp+cappedRewardXp,gold:oldGold+rewardGold,dailyXpDate:localDateKey(),dailyXpEarned:dailyBefore+cappedRewardXp,lastGameClaimId:claimId};
+    renderAccount();
+    loot.textContent=cappedRewardXp>0?`🐉 DRAGONSWOOD REWARD: +${cappedRewardXp} XP • +${actualGold} Gold`:`🐉 DAILY XP CAP REACHED • +${actualGold} Gold`;
+    setStatus(cappedRewardXp>0
+      ?`Saved! This quest awarded +${cappedRewardXp} Player XP and +${actualGold} Gold. Daily XP: ${dailyBefore+cappedRewardXp}/150. You may complete another quest and keep earning until the cap.`
+      :`Saved! You are already at the 150 Player XP daily cap. This quest still awarded +${actualGold} Gold.`,"good");
+  }catch(err){
+    console.error(err);
+    if(String(err.code||"").includes("permission-denied")){
+      loot.textContent="Mission complete • Reward not recorded.";
+      setStatus("Your mission is complete, but the reward ledger could not be updated. Your work is safe; ask your teacher for help.","error");
+    }else{
+      loot.textContent="Mission complete • Reward not recorded.";
+      setStatus("Your mission is complete, but the reward was not recorded. Your math work is safe.","error");
+    }
+  }
+});
+</script>
+
+
+<script id="dragonswood-sound-engine">
+(() => {
+  if (window.DWAudio) return;
+
+  const KEY = "dragonswoodSoundsEnabledV1";
+  let ctx = null;
+  let unlocked = false;
+  let enabled = localStorage.getItem(KEY) !== "off";
+  const lastPlayed = {positive:0, negative:0, bathroom:0, notice:0};
+
+  function getCtx(){
+    if(!enabled) return null;
+    try{
+      if(!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if(ctx.state === "suspended") ctx.resume();
+      unlocked = true;
+      updateBadge();
+      return ctx;
+    }catch(e){ return null; }
+  }
+
+  function tone(freq, start=0, duration=.16, type="sine", gain=.07){
+    const ac = getCtx();
+    if(!ac) return;
+    try{
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.type = type;
+      o.frequency.setValueAtTime(freq, ac.currentTime + start);
+      g.gain.setValueAtTime(.0001, ac.currentTime + start);
+      g.gain.exponentialRampToValueAtTime(gain, ac.currentTime + start + .015);
+      g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + start + duration);
+      o.connect(g); g.connect(ac.destination);
+      o.start(ac.currentTime + start);
+      o.stop(ac.currentTime + start + duration + .03);
+    }catch(e){}
+  }
+
+  function canPlay(kind, gap=220){
+    if(!enabled || !unlocked) return false;
+    const now = Date.now();
+    if(now - (lastPlayed[kind]||0) < gap) return false;
+    lastPlayed[kind] = now;
+    return true;
+  }
+
+  function positive(){
+    if(!canPlay("positive",260)) return;
+    tone(523.25,0,.13,"sine",.065);
+    tone(659.25,.09,.14,"sine",.07);
+    tone(783.99,.18,.22,"sine",.075);
+  }
+
+  function negative(){
+    if(!canPlay("negative",280)) return;
+    tone(233.08,0,.17,"triangle",.07);
+    tone(174.61,.14,.25,"triangle",.075);
+  }
+
+  function bathroom(){
+    if(!canPlay("bathroom",850)) return;
+    // Intentionally distinct from normal success/failure sounds.
+    tone(659.25,0,.18,"sine",.10);
+    tone(880,.20,.20,"sine",.115);
+    tone(659.25,.44,.30,"sine",.10);
+  }
+
+  function notice(){
+    if(!canPlay("notice",500)) return;
+    tone(523.25,0,.13,"sine",.06);
+    tone(783.99,.15,.22,"sine",.075);
+  }
+
+  function setEnabled(v){
+    enabled = !!v;
+    localStorage.setItem(KEY, enabled ? "on" : "off");
+    if(enabled) getCtx();
+    updateBadge();
+  }
+
+  let badge = null;
+  function updateBadge(){
+    if(!badge) return;
+    if(!enabled){
+      badge.textContent = "🔇 Sounds Off";
+      badge.dataset.state = "off";
+    }else if(unlocked){
+      badge.textContent = "🔔 Alerts Armed";
+      badge.dataset.state = "armed";
+    }else{
+      badge.textContent = "🔔 Click to Arm Sounds";
+      badge.dataset.state = "locked";
+    }
+  }
+
+  function addTeacherBadge(){
+    if(!document.body || document.getElementById("dwSoundBadge")) return;
+    badge = document.createElement("button");
+    badge.id = "dwSoundBadge";
+    badge.type = "button";
+    badge.setAttribute("aria-label","Toggle Dragonswood sounds");
+    Object.assign(badge.style,{
+      position:"fixed", right:"14px", bottom:"14px", zIndex:"99999",
+      border:"1px solid rgba(255,220,105,.85)", borderRadius:"999px",
+      padding:"9px 13px", fontWeight:"900", cursor:"pointer",
+      color:"#fff7cc", background:"linear-gradient(90deg,#632fc4,#087da1)",
+      boxShadow:"0 6px 20px rgba(0,0,0,.35)", fontSize:"13px"
+    });
+    badge.onclick = (e) => {
+      e.preventDefault(); e.stopPropagation();
+      if(enabled && unlocked) setEnabled(false);
+      else setEnabled(true);
+    };
+    document.body.appendChild(badge);
+    updateBadge();
+  }
+
+  // Browsers require one user gesture before background-tab audio is permitted.
+  ["pointerdown","keydown","touchstart"].forEach(ev=>{
+    window.addEventListener(ev,()=>{ if(enabled) getCtx(); },{passive:true});
+  });
+
+  window.DWAudio = {
+    positive, negative, bathroom, notice, unlock:getCtx,
+    setEnabled, isEnabled:()=>enabled, isUnlocked:()=>unlocked,
+    addTeacherBadge
+  };
+})();
+</script>
+
+
+<script id="dragonswood-feedback-sounds">
+(() => {
+  if(window.__dwFeedbackSoundsInstalled) return;
+  window.__dwFeedbackSoundsInstalled = true;
+
+  const last = new WeakMap();
+  const good = /\b(correct|success|successful|great|excellent|earned|awarded|approved|saved|complete|completed|victory|won|win|level up|leveled up|unlocked|purchased|perfect|nice work|well done|sent to mr\. evans|back in class)\b/i;
+  const bad  = /\b(wrong|incorrect|failed|failure|denied|dismissed|banned|blocked|could not|can't|cannot|not enough|try again|lost|defeat|error|permission[- ]denied)\b/i;
+
+  function candidate(el){
+    if(!(el instanceof Element)) return null;
+    return el.closest(
+      '.feedback,.status,.message,.notice,.toast,.result,.alert,' +
+      '[id*="feedback" i],[id*="status" i],[id*="message" i],[id*="result" i]'
+    );
+  }
+
+  function inspect(el){
+    const box = candidate(el);
+    if(!box) return;
+    const text = (box.innerText || box.textContent || "").trim();
+    if(!text || last.get(box) === text) return;
+    last.set(box,text);
+    if(bad.test(text)) window.DWAudio?.negative();
+    else if(good.test(text)) window.DWAudio?.positive();
+  }
+
+  const obs = new MutationObserver(records=>{
+    for(const r of records){
+      inspect(r.target instanceof Element ? r.target : r.target.parentElement);
+      for(const n of r.addedNodes || []) if(n instanceof Element) inspect(n);
+    }
+  });
+
+  function start(){
+    if(!document.body) return;
+    obs.observe(document.body,{subtree:true,childList:true,characterData:true});
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",start,{once:true});
+  else start();
+})();
+</script>
+
+</body>
+<script src="narration-manifest.js?v=59.0.0"></script><script src="dragonswood-narrator.js?v=59.0.0"></script><script src="dragonswood-grayson-mode.js?v=58.0"></script></html>
