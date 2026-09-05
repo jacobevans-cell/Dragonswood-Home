@@ -109,8 +109,8 @@ async function attemptAuthenticatedWrite(account){
   try{
     const accounts={};
     for(const [key,email] of Object.entries({
-      grade4:'grade4@explore.academy',grade5:'grade5@explore.academy',noClass:'noclass@explore.academy',
-      noPet:'nopet@explore.academy',missing:'missing@explore.academy',tester:'tester@example.com',
+      grade4:'child-one@example.com',grade5:'child-two@example.com',noClass:'child-no-class@example.com',
+      noPet:'child-no-pet@example.com',missing:'inactive-child@example.com',tester:'tester@example.com',
       unauthorized:'outsider@example.com',teacher:'jacobicusjax@gmail.com',wrongTeacher:'wrongteacher@example.com'
     }))accounts[key]=await signUp(email);
     record('Auth emulator issued fictional identities',true,`${Object.keys(accounts).length} accounts`);
@@ -125,6 +125,10 @@ async function attemptAuthenticatedWrite(account){
     await seed('students',accounts.noClass.uid,{firstName:'NoClass',grade:4,genderGroup:'boys',hp:10,gold:0,xp:0,classId:'',activePet:'',rpgInventory:[],rpgEquipped:{}});
     await seed('students',accounts.noPet.uid,{firstName:'NoPet',grade:5,genderGroup:'girls',hp:10,gold:4,xp:750,classId:'ranger',activePet:'',ownedPets:['pet-emberbean'],eggInventory:2,petTokens:0,rpgInventory:[],rpgEquipped:{}});
     await seed('students',accounts.tester.uid,{firstName:'Tester',grade:5,genderGroup:'girls',hp:10,gold:3,xp:200,classId:'healer',activePet:'',rpgInventory:[],rpgEquipped:{}});
+    for(const account of [accounts.grade4,accounts.grade5,accounts.noClass,accounts.noPet]){
+      await seed('familyMembers',account.uid,{role:'child',active:true});
+    }
+    await seed('familyMembers',accounts.missing.uid,{role:'child',active:false});
     await seed('testerAccounts',accounts.tester.uid,{active:true,label:'V3 gate tester',capabilities:{selfUnlockMorning:true,selfUnlockCurriculum:true,selfUnlockArcade:true,selfUnlockKingdom:true,selfUnlockBoss:true,selfAwardPoints:true}});
     await seed('dailyQuestProgress',`${accounts.grade4.uid}_2026-08-25_v48`,{studentId:accounts.grade4.uid,dateKey:'2026-08-25',session:'morning',status:'complete',score:100});
     await seed('dailyQuestProgress',`${accounts.grade4.uid}_2026-08-24_v48`,{studentId:accounts.grade4.uid,dateKey:'2026-08-24',session:'morning',status:'complete',score:100});
@@ -158,12 +162,12 @@ async function attemptAuthenticatedWrite(account){
     await seed('studentJobWeeks',`${accounts.grade5.uid}_${weekKey(today)}`,{studentId:accounts.grade5.uid,studentName:'Fifth',weekKey:weekKey(today),jobId:'floor-captain',jobName:'Floor Captain',pay:50,checkedDays:[0,1,2,3],completedCount:4,paid:false});
     record('Demo Firestore seeded without production access',true,PROJECT);
 
-    assert.equal(Core.isStudentEligibleEmail(accounts.grade4.email,false),true);
+    assert.equal(Core.isStudentEligibleEmail(accounts.grade4.email,true),true);
     assert.equal(Core.isStudentEligibleEmail(accounts.tester.email,true),true);
     assert.equal(Core.isStudentEligibleEmail(accounts.unauthorized.email,false),false);
     assert.equal(Core.isTeacherEmail(accounts.teacher.email),true);
     assert.equal(Core.isTeacherEmail(accounts.wrongTeacher.email),false);
-    record('Application eligibility policy',true,'Explore + tester allowed; outsider/wrong teacher rejected');
+    record('Application eligibility policy',true,'family child + tester allowed; outsider/wrong parent rejected');
 
     const own=await getDoc('students',accounts.grade4.uid,accounts.grade4.token);
     assert.equal(own.res.ok,true,JSON.stringify(own.body));

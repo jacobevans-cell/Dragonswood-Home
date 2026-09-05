@@ -3,7 +3,7 @@
 const admin=require('firebase-admin');
 const {getFirestore,FieldValue}=require('firebase-admin/firestore');
 
-const PROJECT_ID='dragonswood-9289e';
+const PROJECT_ID='dragonswood-home-not-configured';
 const CAPABILITIES=Object.freeze({
   selfUnlockMorning:true,
   selfUnlockCurriculum:true,

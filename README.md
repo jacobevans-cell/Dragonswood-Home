@@ -1,4 +1,32 @@
-# Dragonswood
+# Dragonswood Home
+
+This repository is the family edition of Dragonswood. It preserves the existing
+fantasy portal and learning systems while using a completely separate Firebase
+project, account list, progress store, functions deployment, and website.
+
+## Home setup status
+
+The source snapshot has been copied successfully. Automatic publishing is paused
+until the new Firebase Web app configuration is installed and the isolation audit
+passes. Do not enable GitHub Pages or deploy Firebase while `.firebaserc` contains
+`dragonswood-home-not-configured`.
+
+After registering the new Firebase Web app, copy
+`config/home-firebase.example.json` outside the repository, fill in the Web app
+values, and run:
+
+```text
+npm run home:configure:firebase -- C:\path\to\home-firebase.json
+npm run home:isolation:audit
+```
+
+The configuration command refuses to use the school Firebase project. Each child
+must also have a Firebase Authentication account and a Firestore document at
+`familyMembers/{uid}` containing `{"role":"child","active":true}`. Firestore
+rules and Cloud Functions use that record to authorize child access.
+
+The original school repository and Firebase project are not deployment targets
+for this repository.
 
 **Current build: v50.0 — Scribe Arena**
 

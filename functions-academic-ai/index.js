@@ -41,8 +41,15 @@ function looksNumeric(v){
 async function isAuthorized(request){
   if(!request.auth)return false;
   const email=String(request.auth.token?.email||"").toLowerCase();
-  if(email===TEACHER_EMAIL||email.endsWith("@explore.academy"))return true;
-  try{const snap=await db.doc(`testerAccounts/${request.auth.uid}`).get();return snap.exists&&snap.data()?.active===true}catch{return false}
+  if(email===TEACHER_EMAIL)return true;
+  try{
+    const [member,tester]=await Promise.all([
+      db.doc(`familyMembers/${request.auth.uid}`).get(),
+      db.doc(`testerAccounts/${request.auth.uid}`).get()
+    ]);
+    return (member.exists&&member.data()?.role==="child"&&member.data()?.active===true)
+      || (tester.exists&&tester.data()?.active===true);
+  }catch{return false}
 }
 const SPELLING_LEVEL_BY_GRADE=Object.freeze({3:"foundation",4:"grade4",5:"grade5",6:"challenge",8:"master"});
 const currentSpellingWeek=()=>Math.max(1,Math.min(30,Math.floor((Date.parse(`${phoenixDateKey()}T12:00:00Z`)-Date.parse("2026-08-24T12:00:00Z"))/(7*24*60*60*1000))+1));

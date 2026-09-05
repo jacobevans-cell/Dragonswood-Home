@@ -3,10 +3,10 @@ import {getApps} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js
 import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 import {getFirestore,doc,getDoc,collection,addDoc,serverTimestamp,query,where,onSnapshot} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-let app=getApps().find(a=>a.options?.projectId==="dragonswood-9289e")||getApps()[0];
+let app=getApps().find(a=>a.options?.projectId==="dragonswood-home-not-configured")||getApps()[0];
 for(let attempt=0;!app&&attempt<100;attempt++){
   await new Promise(resolve=>setTimeout(resolve,50));
-  app=getApps().find(a=>a.options?.projectId==="dragonswood-9289e")||getApps()[0];
+  app=getApps().find(a=>a.options?.projectId==="dragonswood-home-not-configured")||getApps()[0];
 }
 if(!app) throw new Error("Dragonswood Firebase must initialize before student tools.");
 const auth=getAuth(app),db=getFirestore(app),path=location.pathname.split("/").pop()||"index.html";

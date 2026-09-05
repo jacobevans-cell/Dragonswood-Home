@@ -43,7 +43,7 @@ The old V3.3 candidate remains the visual/integration starting point, but `beb1f
 - `dragonswood-subpage-shell-v2.js`
 - `GOGUARDIAN-DRAGONSWOOD-SETUP.md`
 
-Current production still uses Firebase Web SDK 12.1.0, project `dragonswood-9289e`, the Explore Academy student domain, and the exact teacher email. The student shell additionally gained pending-extra-pass tracking, classroom/focus helpers, and updated subpage shell behavior. V3.3 may not regress any of those.
+Current production still uses Firebase Web SDK 12.1.0, project `dragonswood-home-not-configured`, the Explore Academy student domain, and the exact teacher email. The student shell additionally gained pending-extra-pass tracking, classroom/focus helpers, and updated subpage shell behavior. V3.3 may not regress any of those.
 
 ### Stage 4 — Daily Missions / curriculum / pacing / video
 

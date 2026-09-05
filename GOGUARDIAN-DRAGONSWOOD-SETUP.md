@@ -16,7 +16,7 @@ Create an **Allowed Websites List** Scene named `Dragonswood Focus`.
 
 - Live Dragonswood website domain
 - `www.gstatic.com`
-- `dragonswood-9289e.firebaseapp.com`
+- `home-auth-not-configured.invalid`
 - `firestore.googleapis.com`
 - `identitytoolkit.googleapis.com`
 - `securetoken.googleapis.com`

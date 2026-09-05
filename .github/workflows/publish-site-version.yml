@@ -1,9 +1,9 @@
 name: Publish Dragonswood Site Version
 
 on:
-  push:
-    branches:
-      - main
+  # Re-enable the main-branch trigger only after `npm run home:isolation:audit`
+  # passes against the new Firebase project.
+  workflow_dispatch:
 
 permissions:
   contents: write

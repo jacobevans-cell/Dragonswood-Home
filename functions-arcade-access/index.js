@@ -15,6 +15,7 @@ const accessRef=uid=>db.doc(`arcadeAccess/${uid}`);
 const settingsRef=()=>db.doc('arcadeSettings/classAccess');
 const sessionRef=id=>db.doc(`arcadeSessions/${id}`);
 const testerRef=uid=>db.doc(`testerAccounts/${uid}`);
+const familyMemberRef=uid=>db.doc(`familyMembers/${uid}`);
 const testerControlsRef=uid=>db.doc(`testerSelfControls/${uid}`);
 const substituteRef=()=>db.doc('classData/substituteMode');
 const freeArcadeRef=id=>db.doc(`arcadeFreeAccess/${id}`);
@@ -26,9 +27,9 @@ function requireAuth(request){if(!request.auth)throw new HttpsError('unauthentic
 function requireTeacher(request){const auth=requireAuth(request);if(!C.isTeacherEmail(auth.token?.email))throw new HttpsError('permission-denied','Teacher access required.');return auth}
 async function requireStudent(request){
   const auth=requireAuth(request),email=C.normalizedEmail(auth.token?.email);
-  if(C.isTeacherEmail(email)||email.endsWith('@explore.academy'))return auth;
-  const tester=await readTester(auth.uid);
-  if(tester.session.isTester)return auth;
+  if(C.isTeacherEmail(email))return auth;
+  const [member,tester]=await Promise.all([familyMemberRef(auth.uid).get(),readTester(auth.uid)]);
+  if((member.exists&&member.data()?.role==='child'&&member.data()?.active===true)||tester.session.isTester)return auth;
   throw new HttpsError('permission-denied','Authorized Dragonswood students only.');
 }
 function targetUid(request,teacherOnly=false){
@@ -141,8 +142,7 @@ exports.startArcadeSession=onCall(OPTIONS,async request=>{
   const auth=await requireStudent(request),uid=auth.uid,aRef=accessRef(uid),sRef=settingsRef(),newRef=db.collection('arcadeSessions').doc(),now=Date.now();
   const result=await db.runTransaction(async tx=>{
     const [aSnap,settingsSnap,accountSnap,controlsSnap,afternoon,teacherFree]=await Promise.all([tx.get(aRef),tx.get(sRef),tx.get(testerRef(uid)),tx.get(testerControlsRef(uid)),readAfternoon(uid,now,ref=>tx.get(ref)),readTeacherFreeArcade(uid,now,ref=>tx.get(ref))]),access=aSnap.exists?aSnap.data():{},settings=settingsSnap.exists?settingsSnap.data():{};
-    const tester=testerState(uid,accountSnap,controlsSnap),email=C.normalizedEmail(auth.token?.email),ordinaryStudent=C.isTeacherEmail(email)||email.endsWith('@explore.academy');
-    if(!ordinaryStudent&&!tester.session.isTester)throw new HttpsError('permission-denied','Authorized Dragonswood students only.');
+    const tester=testerState(uid,accountSnap,controlsSnap);
     const testerOverride=T.unlockEnabled(tester.session,tester.controls,'unlockArcade'),afternoonOverride=afternoon.eligible===true,teacherFreeOverride=teacherFree.active===true,freeAccess=testerOverride||afternoonOverride||teacherFreeOverride,effectiveSettings=freeAccess?{...settings,enabled:true}:afternoon.active?{...settings,enabled:false}:settings,effectiveAccess=freeAccess?{...access,individualEnabled:true}:access;
     let prior=null,priorRef=null;
     if(C.text(access.currentSessionId)){priorRef=sessionRef(access.currentSessionId);const snap=await tx.get(priorRef);if(snap.exists)prior={id:snap.id,...snap.data()}}

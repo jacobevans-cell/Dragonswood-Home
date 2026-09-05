@@ -3,6 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "home:configure:firebase": "node tools/configure-home-firebase.mjs",
+    "home:isolation:audit": "node tools/home-isolation-audit.mjs",
     "site-cache:audit": "node tools/site-cache/audit-site-cache.mjs",
     "narration:audit": "node tools/narration/audit-narration.mjs",
     "narration:plan": "node tools/narration/generate-azure-brian.mjs",

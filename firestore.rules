@@ -12,6 +12,13 @@ service cloud.firestore {
         && request.auth.token.email == "jacobicusjax@gmail.com";
     }
 
+    function isFamilyChild() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/familyMembers/$(request.auth.uid))
+        && get(/databases/$(database)/documents/familyMembers/$(request.auth.uid)).data.role == "child"
+        && get(/databases/$(database)/documents/familyMembers/$(request.auth.uid)).data.active == true;
+    }
+
     function isTester() {
       return request.auth != null
         && exists(/databases/$(database)/documents/testerAccounts/$(request.auth.uid))
@@ -32,18 +39,20 @@ service cloud.firestore {
     function isExploreStudent() {
       return request.auth != null
         && (
-          (
-            request.auth.token.email != null
-            && request.auth.token.email.matches('.*@explore[.]academy$')
-          )
-          // Teacher-approved outside accounts must be able to exercise the
-          // same guarded student paths during testing.
+          isFamilyChild()
+          // Explicit tester access remains available for emulator and release
+          // verification without making arbitrary signed-in accounts children.
           || isTester()
         );
     }
 
     function isOwner(uid) {
       return request.auth != null && request.auth.uid == uid;
+    }
+
+    match /familyMembers/{memberId} {
+      allow read: if isTeacher() || isOwner(memberId);
+      allow create, update, delete: if isTeacher();
     }
 
     function readingSettings() {

@@ -1,0 +1,9 @@
+{
+  "apiKey": "PASTE_THE_HOME_WEB_APP_API_KEY",
+  "authDomain": "YOUR_HOME_PROJECT.firebaseapp.com",
+  "projectId": "YOUR_HOME_PROJECT",
+  "storageBucket": "YOUR_HOME_PROJECT.firebasestorage.app",
+  "messagingSenderId": "PASTE_THE_HOME_MESSAGING_SENDER_ID",
+  "appId": "PASTE_THE_HOME_WEB_APP_ID",
+  "measurementId": ""
+}

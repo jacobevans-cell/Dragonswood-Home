@@ -6,10 +6,10 @@ window.DRAGONSWOOD_ARCADE_CONFIG = {
   firebase: {
     enabled: true,
     authMode: 'shared-dragonswood',
-    apiKey: 'AIzaSyC918WJoGQgxRKsqcz-3bXI7iZWv_1bwYE',
-    authDomain: 'dragonswood-9289e.firebaseapp.com',
-    projectId: 'dragonswood-9289e',
-    appId: '1:1064477064695:web:283e1016ee2303d39042f2'
+    apiKey: 'HOME_FIREBASE_NOT_CONFIGURED',
+    authDomain: 'home-auth-not-configured.invalid',
+    projectId: 'dragonswood-home-not-configured',
+    appId: '1:000000000001:web:home-not-configured'
   },
   leaderboard: {
     timezone: 'America/Phoenix',

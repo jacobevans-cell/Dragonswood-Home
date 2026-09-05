@@ -4,7 +4,7 @@
 (function(){
 'use strict';
 const q=new URLSearchParams(location.search);
-function ensureFirebase(){if(!window.firebase)throw new Error('Dragonswood Firebase did not load.');if(!firebase.apps.length)firebase.initializeApp({apiKey:'AIzaSyC918WJoGQgxRKsqcz-3bXI7iZWv_1bwYE',authDomain:'dragonswood-9289e.firebaseapp.com',projectId:'dragonswood-9289e',storageBucket:'dragonswood-9289e.firebasestorage.app',messagingSenderId:'1064477064695',appId:'1:1064477064695:web:283e1016ee2303d39042f2',measurementId:'G-LPRLDGVBD2'});return firebase.app();}
+function ensureFirebase(){if(!window.firebase)throw new Error('Dragonswood Firebase did not load.');if(!firebase.apps.length)firebase.initializeApp({apiKey:'HOME_FIREBASE_NOT_CONFIGURED',authDomain:'home-auth-not-configured.invalid',projectId:'dragonswood-home-not-configured',storageBucket:'home-storage-not-configured.invalid',messagingSenderId:'000000000001',appId:'1:000000000001:web:home-not-configured',measurementId:''});return firebase.app();}
 const app=ensureFirebase(),auth=firebase.auth(app),functions=firebase.functions(app);
 const call=name=>functions.httpsCallable(name);
 const calls={launch:call('getDeepTimeLaunchV43'),objective:call('checkDeepTimeObjectiveV43'),ai:call('submitPaleoStep'),final:call('checkDeepTimeFinalV43'),tile:call('getDeepTimeTileV43'),clear:call('clearDeepTimeTileV43'),museum:call('getDeepTimeMuseumRevealV43'),teacher:call('getDeepTimeTeacherDashboardV43')};

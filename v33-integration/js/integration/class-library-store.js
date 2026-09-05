@@ -2,12 +2,12 @@ const FIREBASE_VERSION = "12.1.0";
 const TEACHER_APP_NAME = "DragonswoodV33TeacherIntegration";
 const TEACHER_EMAIL = "jacobicusjax@gmail.com";
 const PRODUCTION_CONFIG = Object.freeze({
-  apiKey: "AIzaSyC918WJoGQgxRKsqcz-3bXI7iZWv_1bwYE",
-  authDomain: "dragonswood-9289e.firebaseapp.com",
-  projectId: "dragonswood-9289e",
-  storageBucket: "dragonswood-9289e.firebasestorage.app",
-  messagingSenderId: "1064477064695",
-  appId: "1:1064477064695:web:283e1016ee2303d39042f2"
+  apiKey: "HOME_FIREBASE_NOT_CONFIGURED",
+  authDomain: "home-auth-not-configured.invalid",
+  projectId: "dragonswood-home-not-configured",
+  storageBucket: "home-storage-not-configured.invalid",
+  messagingSenderId: "000000000001",
+  appId: "1:000000000001:web:home-not-configured"
 });
 const EMULATOR_CONFIG = Object.freeze({
   apiKey: "demo-key",

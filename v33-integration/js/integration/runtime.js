@@ -8,9 +8,8 @@
   const Tester=window.DWTesterAccess;
   if(!Core||!Academic||!World||!Operations||!Passes||!Tester)throw new Error('The V3.3 integration contracts must load before the runtime.');
 
-  const PRODUCTION_FIREBASE_CONFIG=Object.freeze({apiKey:'AIzaSyC918WJoGQgxRKsqcz-3bXI7iZWv_1bwYE',authDomain:'dragonswood-9289e.firebaseapp.com',projectId:'dragonswood-9289e',storageBucket:'dragonswood-9289e.firebasestorage.app',messagingSenderId:'1064477064695',appId:'1:1064477064695:web:283e1016ee2303d39042f2',measurementId:'G-LPRLDGVBD2'});
+  const PRODUCTION_FIREBASE_CONFIG=Object.freeze({apiKey:'HOME_FIREBASE_NOT_CONFIGURED',authDomain:'home-auth-not-configured.invalid',projectId:'dragonswood-home-not-configured',storageBucket:'home-storage-not-configured.invalid',messagingSenderId:'000000000001',appId:'1:000000000001:web:home-not-configured',measurementId:''});
   const EMULATOR_FIREBASE_CONFIG=Object.freeze({apiKey:'demo-key',authDomain:'demo-dragonswood-v33.localhost',projectId:'demo-dragonswood-v33',storageBucket:'demo-dragonswood-v33.appspot.com',messagingSenderId:'000000000000',appId:'1:000000000000:web:demo-v33'});
-  const DOMAIN=Core.STUDENT_DOMAIN;
   const TEACHER=Core.TEACHER_EMAIL;
   const VERSION='v33-student-beta-1';
   const params=new URLSearchParams(location.search);
@@ -63,25 +62,26 @@
     let F;
     try{F=await createFirebase('student')}catch(err){emit(onUpdate,{status:'error',message:`Firebase could not load: ${err?.message||err}`});return {environment,signIn:async()=>{},signOut:async()=>{},dispose(){}}}
     const {S,auth,db,functions}=F;
-    let profileUnsub=null,dailyUnsub=null,spellingUnsub=null,overrideUnsub=null,scribeUnsub=null,responsesUnsub=null,gamesUnsub=null,readingUnsub=null,gradeSettingsUnsub=null,scheduleUnsub=null,jobsUnsub=null,eventsUnsub=null,jobWeekUnsub=null,scoresUnsub=null,rewardsUnsub=null,lootUnsub=null,prizesUnsub=null,pollUnsub=null,pollVotesUnsub=null,attentionUnsub=null,attentionEventsUnsub=null,kingdomAccessUnsub=null,substituteUnsub=null,testerUnsub=null,testerControlsUnsub=null;
+    let profileUnsub=null,dailyUnsub=null,spellingUnsub=null,overrideUnsub=null,scribeUnsub=null,responsesUnsub=null,gamesUnsub=null,readingUnsub=null,gradeSettingsUnsub=null,scheduleUnsub=null,jobsUnsub=null,eventsUnsub=null,jobWeekUnsub=null,scoresUnsub=null,rewardsUnsub=null,lootUnsub=null,prizesUnsub=null,pollUnsub=null,pollVotesUnsub=null,attentionUnsub=null,attentionEventsUnsub=null,kingdomAccessUnsub=null,substituteUnsub=null,familyMemberUnsub=null,testerUnsub=null,testerControlsUnsub=null;
     let bathroomStatusUnsub=null,snackStatusUnsub=null,outOfSeatStatusUnsub=null,officeStatusUnsub=null,bathroomRequestUnsub=null,snackRequestUnsub=null,outOfSeatRequestUnsub=null,officeRequestUnsub=null,boySlotUnsub=null,girlSlotUnsub=null,blackoutUnsub=null,classMainUnsub=null,secondRecessUnsub=null,classPetUnsub=null,fieldTripUnsub=null,universalPointsUnsub=null;
-    let lastProfile=null,lastDaily=[],lastSpelling=[],lastOverride={},lastScribe={},lastResponses=[],lastGames=[],lastReading=[],lastGradeSettings={},lastSchedule={},lastJobs={},lastEvents=[],lastJobWeek=null,lastScores=[],lastRewards=[],lastLoot=[],lastPrizes=[],lastPoll={},lastPollVotes=[],lastAttention={},lastAttentionEvents=[],lastKingdomAccess={},lastSubstituteMode={},lastTesterAccount={},lastTesterControls={},currentUser=null;
+    let lastProfile=null,lastDaily=[],lastSpelling=[],lastOverride={},lastScribe={},lastResponses=[],lastGames=[],lastReading=[],lastGradeSettings={},lastSchedule={},lastJobs={},lastEvents=[],lastJobWeek=null,lastScores=[],lastRewards=[],lastLoot=[],lastPrizes=[],lastPoll={},lastPollVotes=[],lastAttention={},lastAttentionEvents=[],lastKingdomAccess={},lastSubstituteMode={},lastFamilyMember={},lastTesterAccount={},lastTesterControls={},currentUser=null;
     let lastPassStatuses={},lastPassRequests={},lastBathroomSlots={},lastPassBlackout={},lastClassData={};
-    const ready={tester:false,testerControls:false,profile:false,daily:false,spelling:false,override:false,scribe:false,responses:false,games:false,reading:false,gradeSettings:false,schedule:false,jobs:false,events:false,jobWeek:false,scores:false,rewards:false,loot:false,prizes:false,poll:false,pollVotes:false,attention:false,attentionEvents:false,kingdomAccess:false,substituteMode:false,bathroomStatus:false,snackStatus:false,outOfSeatStatus:false,officeStatus:false,bathroomRequest:false,snackRequest:false,outOfSeatRequest:false,officeRequest:false,boySlot:false,girlSlot:false,passBlackout:false,classMain:false,secondRecess:false,classPet:false,fieldTrip:false,universalPoints:false};
+    const ready={familyMember:false,tester:false,testerControls:false,profile:false,daily:false,spelling:false,override:false,scribe:false,responses:false,games:false,reading:false,gradeSettings:false,schedule:false,jobs:false,events:false,jobWeek:false,scores:false,rewards:false,loot:false,prizes:false,poll:false,pollVotes:false,attention:false,attentionEvents:false,kingdomAccess:false,substituteMode:false,bathroomStatus:false,snackStatus:false,outOfSeatStatus:false,officeStatus:false,bathroomRequest:false,snackRequest:false,outOfSeatRequest:false,officeRequest:false,boySlot:false,girlSlot:false,passBlackout:false,classMain:false,secondRecess:false,classPet:false,fieldTrip:false,universalPoints:false};
     const clear=()=>{
-      for(const fn of [profileUnsub,dailyUnsub,spellingUnsub,overrideUnsub,scribeUnsub,responsesUnsub,gamesUnsub,readingUnsub,gradeSettingsUnsub,scheduleUnsub,jobsUnsub,eventsUnsub,jobWeekUnsub,scoresUnsub,rewardsUnsub,lootUnsub,prizesUnsub,pollUnsub,pollVotesUnsub,attentionUnsub,attentionEventsUnsub,kingdomAccessUnsub,substituteUnsub,testerUnsub,testerControlsUnsub,bathroomStatusUnsub,snackStatusUnsub,outOfSeatStatusUnsub,officeStatusUnsub,bathroomRequestUnsub,snackRequestUnsub,outOfSeatRequestUnsub,officeRequestUnsub,boySlotUnsub,girlSlotUnsub,blackoutUnsub,classMainUnsub,secondRecessUnsub,classPetUnsub,fieldTripUnsub,universalPointsUnsub])try{fn?.()}catch{}
-      profileUnsub=dailyUnsub=spellingUnsub=overrideUnsub=scribeUnsub=responsesUnsub=gamesUnsub=readingUnsub=gradeSettingsUnsub=scheduleUnsub=jobsUnsub=eventsUnsub=jobWeekUnsub=scoresUnsub=rewardsUnsub=lootUnsub=prizesUnsub=pollUnsub=pollVotesUnsub=attentionUnsub=attentionEventsUnsub=kingdomAccessUnsub=substituteUnsub=testerUnsub=testerControlsUnsub=null;
+      for(const fn of [profileUnsub,dailyUnsub,spellingUnsub,overrideUnsub,scribeUnsub,responsesUnsub,gamesUnsub,readingUnsub,gradeSettingsUnsub,scheduleUnsub,jobsUnsub,eventsUnsub,jobWeekUnsub,scoresUnsub,rewardsUnsub,lootUnsub,prizesUnsub,pollUnsub,pollVotesUnsub,attentionUnsub,attentionEventsUnsub,kingdomAccessUnsub,substituteUnsub,familyMemberUnsub,testerUnsub,testerControlsUnsub,bathroomStatusUnsub,snackStatusUnsub,outOfSeatStatusUnsub,officeStatusUnsub,bathroomRequestUnsub,snackRequestUnsub,outOfSeatRequestUnsub,officeRequestUnsub,boySlotUnsub,girlSlotUnsub,blackoutUnsub,classMainUnsub,secondRecessUnsub,classPetUnsub,fieldTripUnsub,universalPointsUnsub])try{fn?.()}catch{}
+      profileUnsub=dailyUnsub=spellingUnsub=overrideUnsub=scribeUnsub=responsesUnsub=gamesUnsub=readingUnsub=gradeSettingsUnsub=scheduleUnsub=jobsUnsub=eventsUnsub=jobWeekUnsub=scoresUnsub=rewardsUnsub=lootUnsub=prizesUnsub=pollUnsub=pollVotesUnsub=attentionUnsub=attentionEventsUnsub=kingdomAccessUnsub=substituteUnsub=familyMemberUnsub=testerUnsub=testerControlsUnsub=null;
       bathroomStatusUnsub=snackStatusUnsub=outOfSeatStatusUnsub=officeStatusUnsub=bathroomRequestUnsub=snackRequestUnsub=outOfSeatRequestUnsub=officeRequestUnsub=boySlotUnsub=girlSlotUnsub=blackoutUnsub=null;
-      lastProfile=null;lastDaily=[];lastSpelling=[];lastOverride={};lastScribe={};lastResponses=[];lastGames=[];lastReading=[];lastGradeSettings={};lastSchedule={};lastJobs={};lastEvents=[];lastJobWeek=null;lastScores=[];lastRewards=[];lastLoot=[];lastPrizes=[];lastPoll={};lastPollVotes=[];lastAttention={};lastAttentionEvents=[];lastKingdomAccess={};lastSubstituteMode={};lastTesterAccount={};lastTesterControls={};
+      lastProfile=null;lastDaily=[];lastSpelling=[];lastOverride={};lastScribe={};lastResponses=[];lastGames=[];lastReading=[];lastGradeSettings={};lastSchedule={};lastJobs={};lastEvents=[];lastJobWeek=null;lastScores=[];lastRewards=[];lastLoot=[];lastPrizes=[];lastPoll={};lastPollVotes=[];lastAttention={};lastAttentionEvents=[];lastKingdomAccess={};lastSubstituteMode={};lastFamilyMember={};lastTesterAccount={};lastTesterControls={};
       lastPassStatuses={};lastPassRequests={};lastBathroomSlots={};lastPassBlackout={};lastClassData={};
       for(const key of Object.keys(ready))ready[key]=false;
     };
+    const currentFamilyMember=()=>lastFamilyMember?.role==='child'&&lastFamilyMember?.active===true;
     const currentTester=()=>Tester.normalizeTester(currentUser?.uid,lastTesterAccount?.active===true?lastTesterAccount:null);
     const currentTesterControls=()=>Tester.normalizeControls(currentTester(),lastTesterControls);
     const push=()=>{
       if(!currentUser||!Object.values(ready).every(Boolean))return;
       const tester=currentTester(),testerUnlocks=currentTesterControls(),email=Core.normalizedEmail(currentUser.email);
-      if(!Core.isStudentEligibleEmail(email,tester.isTester)){emit(onUpdate,{status:'unauthorized',user:currentUser,message:'This account is not authorized for Dragonswood.'});return}
+      if(!Core.isStudentEligibleEmail(email,currentFamilyMember()||tester.isTester)){emit(onUpdate,{status:'unauthorized',user:currentUser,message:'This account is not an active Dragonswood Home family member.'});return}
       const morningOverride=Tester.unlockEnabled(tester,testerUnlocks,'unlockMorning'),curriculumOverride=Tester.unlockEnabled(tester,testerUnlocks,'unlockCurriculum'),kingdomOverride=Tester.unlockEnabled(tester,testerUnlocks,'unlockKingdom');
       const kingdom=Operations.datedFeatureAccess(lastKingdomAccess),substituteMode=Operations.datedSubstituteMode(lastSubstituteMode),attention=Operations.attentionModel(lastAttention,lastAttentionEvents,[{id:currentUser.uid,name:lastProfile?.firstName||currentUser.displayName||'Scholar'}]);
       const effectiveBlackout=substituteMode.active?{active:true,reason:'Substitute Mode is on today. Ask your substitute teacher if you need a pass.'}:lastPassBlackout;
@@ -103,13 +103,18 @@
     };
     const authUnsub=S.auth.onAuthStateChanged(auth,async user=>{
       clear();currentUser=user||null;
-      if(!user){emit(onUpdate,{status:'signed-out',message:'Sign in with your school Google account.'});return}
+      if(!user){emit(onUpdate,{status:'signed-out',message:'Sign in with your Dragonswood Home account.'});return}
       emit(onUpdate,{status:'checking',user,message:'Reading your entry seal…'});
       const email=Core.normalizedEmail(user.email);
-      const tester=await Tester.resolveTester(user.uid,async uid=>{const snap=await S.firestore.getDoc(S.firestore.doc(db,'testerAccounts',uid));return snap.exists()?snap.data():null});
-      if(!Core.isStudentEligibleEmail(email,tester.isTester)){
-        emit(onUpdate,{status:'unauthorized',user,message:'This account is not authorized for Dragonswood.'});return;
+      const [memberSnap,tester]=await Promise.all([
+        S.firestore.getDoc(S.firestore.doc(db,'familyMembers',user.uid)),
+        Tester.resolveTester(user.uid,async uid=>{const snap=await S.firestore.getDoc(S.firestore.doc(db,'testerAccounts',uid));return snap.exists()?snap.data():null})
+      ]);
+      const member=memberSnap.exists()?memberSnap.data():{},activeFamilyChild=member.role==='child'&&member.active===true;
+      if(!Core.isStudentEligibleEmail(email,activeFamilyChild||tester.isTester)){
+        emit(onUpdate,{status:'unauthorized',user,message:'This account is not an active Dragonswood Home family member.'});return;
       }
+      lastFamilyMember=activeFamilyChild?{role:'child',active:true}:{};
       lastTesterAccount=tester.exists?{active:tester.active,email:tester.email,label:tester.label,capabilities:{...tester.capabilities}}:{};
       const watchDoc=(path,key,setter,label)=>S.firestore.onSnapshot(S.firestore.doc(db,...path),snap=>{setter(snap.exists()?{id:snap.id,...snap.data()}:{});ready[key]=true;push()},err=>emit(onUpdate,{status:'error',user,message:`${label} read failed: ${err?.code||err?.message||err}`}));
       const watchQuery=(query,key,setter,label)=>S.firestore.onSnapshot(query,snap=>{setter(snap.docs.map(d=>({id:d.id,...d.data()})));ready[key]=true;push()},err=>emit(onUpdate,{status:'error',user,message:`${label} read failed: ${err?.code||err?.message||err}`}));
@@ -124,6 +129,7 @@
           emit(onUpdate,{status:'error',user,message:`${label} read failed: ${err?.code||err?.message||err}`});
         }
       );
+      familyMemberUnsub=watchDoc(['familyMembers',user.uid],'familyMember',value=>{lastFamilyMember=value},'Family authorization');
       testerUnsub=watchDoc(['testerAccounts',user.uid],'tester',value=>{lastTesterAccount=value},'Tester authorization');
       testerControlsUnsub=watchDoc(['testerSelfControls',user.uid],'testerControls',value=>{lastTesterControls=value},'Tester self-controls');
       profileUnsub=watchDoc(['students',user.uid],'profile',value=>{lastProfile=value},'Student profile');

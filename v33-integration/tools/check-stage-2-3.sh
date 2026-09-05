@@ -52,7 +52,7 @@ if not m:
 block=m.group(1)
 if 'demo-dragonswood-v33' not in block:
     raise SystemExit('FAIL: emulator config is not pinned to demo-dragonswood-v33')
-if 'dragonswood-9289e' in block:
+if 'dragonswood-home-not-configured' in block:
     raise SystemExit('FAIL: production project leaked into emulator Firebase config')
 if "environment==='emulator'?EMULATOR_FIREBASE_CONFIG:PRODUCTION_FIREBASE_CONFIG" not in text:
     raise SystemExit('FAIL: Firebase config selection is not explicitly environment-gated')
@@ -68,7 +68,7 @@ if ! rg -q "request.auth == null && request.resource.data.__gateSeed == true" "$
   exit 1
 fi
 
-if rg -n 'dragonswood-9289e' "$ROOT/firestore.gate.rules" "$ROOT/firebase.integration.json" "$ROOT/tools/firebase-identity-gate.cjs"; then
+if rg -n 'dragonswood-home-not-configured' "$ROOT/firestore.gate.rules" "$ROOT/firebase.integration.json" "$ROOT/tools/firebase-identity-gate.cjs"; then
   echo 'FAIL: live production project identifier leaked into the isolated Firebase gate files' >&2
   exit 1
 fi

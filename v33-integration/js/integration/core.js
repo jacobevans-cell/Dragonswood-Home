@@ -7,7 +7,7 @@
 
   const XP_THRESHOLDS=Object.freeze([0,200,450,750,1100,1500,1950,2450,3000,3600,4250,4950,5700,6500,7350,8250,9200,10200,11100,12000]);
   const CLASS_LABELS=Object.freeze({warrior:'Warrior',ranger:'Ranger',mage:'Mage',healer:'Healer'});
-  const STUDENT_DOMAIN='explore.academy';
+  const STUDENT_DOMAIN='family-member';
   const TEACHER_EMAIL='jacobicusjax@gmail.com';
   const TITLE_RULES=Object.freeze({
     princess:['Princess','before'],prince:['Prince','before'],queen:['Queen','before'],king:['King','before'],witch:['Witch','before'],
@@ -23,8 +23,8 @@
 
   function normalizedEmail(value){return text(value).toLowerCase()}
   function isTeacherEmail(email){return normalizedEmail(email)===TEACHER_EMAIL}
-  function isExploreEmail(email){const e=normalizedEmail(email);return !!e&&e.endsWith('@'+STUDENT_DOMAIN)}
-  function isStudentEligibleEmail(email,testerExists=false){return isExploreEmail(email)||isTeacherEmail(email)||testerExists===true}
+  function isExploreEmail(email){const e=normalizedEmail(email);return !!e&&!isTeacherEmail(e)}
+  function isStudentEligibleEmail(email,familyMemberOrTester=false){return isTeacherEmail(email)||familyMemberOrTester===true}
 
   function levelInfo(xp){
     xp=Math.max(0,finite(xp));

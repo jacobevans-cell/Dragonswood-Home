@@ -19,7 +19,7 @@ const expectedCapabilities={
   selfAwardPoints:true
 };
 
-assert.equal(PROJECT_ID,'dragonswood-9289e');
+assert.equal(PROJECT_ID,'dragonswood-home-not-configured');
 assert.deepEqual(RECORDS.map(({uid,email,label,active,capabilities})=>({uid,email,label,active,capabilities})),[
   {uid:'S2hmoniITye8AGvnLBSt6NeiJYq2',email:'jacob.evans@explore.academy',label:'Jacob Evans Explore Tester',active:true,capabilities:expectedCapabilities},
   {uid:'LFy1nHGz5zbK0Xs0XSU2749zXxi1',email:'jacobicusjax@gmail.com',label:'Jacob Evans Teacher Tester',active:true,capabilities:expectedCapabilities}
@@ -88,9 +88,9 @@ assert.match(rules,/match \/testerSelfControls\/\{uid\}[\s\S]*request\.auth\.uid
 assert.match(functionsSource,/target identifiers are not accepted/);
 pass(11,'Cross-UID tester controls and point targets are denied by design');
 
-assert.equal(Core.isStudentEligibleEmail('ordinary@explore.academy',false),true);
+assert.equal(Core.isStudentEligibleEmail('child@example.com',true),true);
 assert.equal(normal.isTester,false);
-pass(12,'Normal Explore students retain ordinary access without tester powers');
+pass(12,'Active family children retain ordinary access without tester powers');
 
 assert.equal(Tester.normalizeTester('tech-peo-uid',null).isTester,false);
 pass(13,'tech-peo@explore.academy is not a tester');

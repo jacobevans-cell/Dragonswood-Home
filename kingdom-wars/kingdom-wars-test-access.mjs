@@ -2,12 +2,12 @@ import '../functions-arcade-access/tester-core.js';
 
 const SDK='12.1.0';
 const PROD_CFG={
-  apiKey:'AIzaSyC918WJoGQgxRKsqcz-3bXI7iZWv_1bwYE',
-  authDomain:'dragonswood-9289e.firebaseapp.com',
-  projectId:'dragonswood-9289e',
-  storageBucket:'dragonswood-9289e.firebasestorage.app',
-  messagingSenderId:'1064477064695',
-  appId:'1:1064477064695:web:283e1016ee2303d39042f2'
+  apiKey:'HOME_FIREBASE_NOT_CONFIGURED',
+  authDomain:'home-auth-not-configured.invalid',
+  projectId:'dragonswood-home-not-configured',
+  storageBucket:'home-storage-not-configured.invalid',
+  messagingSenderId:'000000000001',
+  appId:'1:000000000001:web:home-not-configured'
 };
 const DEMO_CFG={apiKey:'demo-key',authDomain:'demo-dragonswood-v33.localhost',projectId:'demo-dragonswood-v33',storageBucket:'demo-dragonswood-v33.appspot.com',messagingSenderId:'000000000000',appId:'1:000000000000:web:demo-v33'};
 const params=typeof location==='undefined'?new URLSearchParams():new URLSearchParams(location.search);
@@ -64,11 +64,11 @@ async function kingdomTeacherAccess(db,fsMod,uid){
   return {kingdomDateKey:dateKey,kingdomTeacherUnlocked:row.dateKey===dateKey&&(row.all===true||studentIds.includes(String(uid)))};
 }
 
-export function authorizeKingdomTester({email='',tester=null}={}){
+export function authorizeKingdomTester({email='',tester=null,familyMember=null}={}){
   const normalizedEmail=String(email||'').trim().toLowerCase();
   if(tester?.isTester===true)return {allowed:true,reason:'tester-account'};
   if(normalizedEmail===TEACHER_EMAIL)return {allowed:true,reason:'teacher-student-portal'};
-  if(environment==='production'&&normalizedEmail.endsWith('@explore.academy'))return {allowed:true,reason:'student-beta'};
+  if(familyMember?.role==='child'&&familyMember?.active===true)return {allowed:true,reason:'family-child'};
   return {allowed:false,reason:'not-authorized'};
 }
 
@@ -80,19 +80,21 @@ export async function getKingdomTesterSession({silent=false}={}){
     if(!user)return {allowed:false,reason:'not-signed-in',user:null,student:null};
 
     const email=String(user.email||'').toLowerCase();
-    let student=null,account=null,controls={};
+    let student=null,account=null,controls={},familyMember=null;
     try{
-      const [s,t,c]=await Promise.all([
+      const [s,t,c,m]=await Promise.all([
         fsMod.getDoc(fsMod.doc(db,'students',user.uid)),
         fsMod.getDoc(fsMod.doc(db,'testerAccounts',user.uid)),
-        fsMod.getDoc(fsMod.doc(db,'testerSelfControls',user.uid))
+        fsMod.getDoc(fsMod.doc(db,'testerSelfControls',user.uid)),
+        fsMod.getDoc(fsMod.doc(db,'familyMembers',user.uid))
       ]);
       if(s.exists())student=s.data()||{};
       if(t.exists())account=t.data()||{};
       if(c.exists())controls=c.data()||{};
+      if(m.exists())familyMember=m.data()||{};
     }catch{}
     const tester=Tester.normalizeTester(user.uid,account),testerControls=Tester.normalizeControls(tester,controls),testerOverride=Tester.unlockEnabled(tester,testerControls,'unlockKingdom');
-    const decision=authorizeKingdomTester({email,tester});
+    const decision=authorizeKingdomTester({email,tester,familyMember});
     if(!decision.allowed)return {...decision,user,student,dailyAccessUnlocked:false,environment};
     let access,kingdom;
     try{[access,kingdom]=await Promise.all([morningWorkAccess(db,fsMod,user.uid),kingdomTeacherAccess(db,fsMod,user.uid)])}catch(error){return {allowed:false,reason:'morning-work-check-failed',user,student,dailyAccessUnlocked:false,environment,error}}
