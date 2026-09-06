@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "source": "functions-home-auth",
+    "codebase": "home-auth"
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "arcade/firestore.indexes.json"
+  }
+}

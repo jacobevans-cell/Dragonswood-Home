@@ -7,6 +7,10 @@
     {
       "source": "functions-arcade-access",
       "codebase": "arcade-access"
+    },
+    {
+      "source": "functions-home-auth",
+      "codebase": "home-auth"
     }
   ],
   "firestore": {

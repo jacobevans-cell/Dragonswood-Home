@@ -371,5 +371,3 @@ exports.synthesizeBrianNarration=onCall({region:"us-central1",timeoutSeconds:60,
   }catch(error){console.error("Brian narration synthesis failed",error?.message||error);throw new HttpsError("unavailable","Brian narration is temporarily unavailable.")}
 });
 }
-
-Object.assign(exports,require("./home-visual-auth").createHomeVisualAuth({onCall,HttpsError,admin,db,FieldValue,Timestamp,teacherEmail:TEACHER_EMAIL}));
