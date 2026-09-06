@@ -1,7 +1,7 @@
 (function(){
   'use strict';
   window.DRAGONSWOOD_HOME_FIREBASE_CONFIG=Object.freeze({
-    apiKey:'AIzaSyD-qVZOZ3L3qgYItNfone4yEdouywF4BXU',
+    apiKey:'AIzaSyD-qVZO23L3qgYItNfone4yEdouywF4BXU',
     authDomain:'dragonswood-home.firebaseapp.com',
     projectId:'dragonswood-home',
     storageBucket:'dragonswood-home.firebasestorage.app',

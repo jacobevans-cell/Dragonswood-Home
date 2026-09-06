@@ -2,7 +2,7 @@ import '../functions-arcade-access/tester-core.js';
 
 const SDK='12.1.0';
 const PROD_CFG={
-  apiKey:'AIzaSyD-qVZOZ3L3qgYItNfone4yEdouywF4BXU',
+  apiKey:'AIzaSyD-qVZO23L3qgYItNfone4yEdouywF4BXU',
   authDomain:'dragonswood-home.firebaseapp.com',
   projectId:'dragonswood-home',
   storageBucket:'dragonswood-home.firebasestorage.app',

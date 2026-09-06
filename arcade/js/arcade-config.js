@@ -6,7 +6,7 @@ window.DRAGONSWOOD_ARCADE_CONFIG = {
   firebase: {
     enabled: true,
     authMode: 'shared-dragonswood',
-    apiKey: 'AIzaSyD-qVZOZ3L3qgYItNfone4yEdouywF4BXU',
+    apiKey: 'AIzaSyD-qVZO23L3qgYItNfone4yEdouywF4BXU',
     authDomain: 'dragonswood-home.firebaseapp.com',
     projectId: 'dragonswood-home',
     appId: '1:2486017303:web:1bf3893e6b6d6b6530eb52'

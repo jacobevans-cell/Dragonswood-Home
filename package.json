@@ -5,7 +5,7 @@
   "scripts": {
     "home:configure:firebase": "node tools/configure-home-firebase.mjs",
     "home:isolation:audit": "node tools/home-isolation-audit.mjs",
-    "home:visual-auth:test": "node functions-academic-ai/home-visual-auth-core-selftest.cjs",
+    "home:visual-auth:test": "node functions-home-auth/home-visual-auth-core-selftest.cjs",
     "site-cache:audit": "node tools/site-cache/audit-site-cache.mjs",
     "narration:audit": "node tools/narration/audit-narration.mjs",
     "narration:plan": "node tools/narration/generate-azure-brian.mjs",

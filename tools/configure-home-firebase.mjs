@@ -35,6 +35,7 @@ const replacements=Object.freeze([
   ['home-auth-not-configured.invalid',String(config.authDomain)],
   ['AIzaSyC918WJoGQgxRKsqcz-3bXI7iZWv_1bwYE',String(config.apiKey)],
   ['HOME_FIREBASE_NOT_CONFIGURED',String(config.apiKey)],
+  ['AIzaSyD-qVZOZ3L3qgYItNfone4yEdouywF4BXU',String(config.apiKey)],
   ['G-LPRLDGVBD2',String(config.measurementId||'')],
   ['1064477064695',String(config.messagingSenderId)],
   ['000000000001',String(config.messagingSenderId)],

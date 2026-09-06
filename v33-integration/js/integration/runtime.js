@@ -8,7 +8,7 @@
   const Tester=window.DWTesterAccess;
   if(!Core||!Academic||!World||!Operations||!Passes||!Tester)throw new Error('The V3.3 integration contracts must load before the runtime.');
 
-  const PRODUCTION_FIREBASE_CONFIG=window.DRAGONSWOOD_HOME_FIREBASE_CONFIG||Object.freeze({apiKey:'AIzaSyD-qVZOZ3L3qgYItNfone4yEdouywF4BXU',authDomain:'dragonswood-home.firebaseapp.com',projectId:'dragonswood-home',storageBucket:'dragonswood-home.firebasestorage.app',messagingSenderId:'2486017303',appId:'1:2486017303:web:1bf3893e6b6d6b6530eb52',measurementId:''});
+  const PRODUCTION_FIREBASE_CONFIG=window.DRAGONSWOOD_HOME_FIREBASE_CONFIG||Object.freeze({apiKey:'AIzaSyD-qVZO23L3qgYItNfone4yEdouywF4BXU',authDomain:'dragonswood-home.firebaseapp.com',projectId:'dragonswood-home',storageBucket:'dragonswood-home.firebasestorage.app',messagingSenderId:'2486017303',appId:'1:2486017303:web:1bf3893e6b6d6b6530eb52',measurementId:''});
   const EMULATOR_FIREBASE_CONFIG=Object.freeze({apiKey:'demo-key',authDomain:'demo-dragonswood-v33.localhost',projectId:'demo-dragonswood-v33',storageBucket:'demo-dragonswood-v33.appspot.com',messagingSenderId:'000000000000',appId:'1:000000000000:web:demo-v33'});
   const TEACHER=Core.TEACHER_EMAIL;
   const VERSION='v33-student-beta-1';

@@ -5,7 +5,7 @@
   const DAILY_XP_CAP = 150;
   const XP_THRESHOLDS = [0,200,450,750,1100,1500,1950,2450,3000,3600,4250,4950,5700,6500,7350,8250,9200,10200,11100,12000];
   const firebaseConfig = {
-    apiKey: 'AIzaSyD-qVZOZ3L3qgYItNfone4yEdouywF4BXU',
+    apiKey: 'AIzaSyD-qVZO23L3qgYItNfone4yEdouywF4BXU',
     authDomain: 'dragonswood-home.firebaseapp.com',
     projectId: 'dragonswood-home',
     storageBucket: 'dragonswood-home.firebasestorage.app',
