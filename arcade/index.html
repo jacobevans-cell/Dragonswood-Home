@@ -21,7 +21,7 @@
     <header class="arcade-header">
       <button id="homeBrand" class="brand-button" aria-label="Dragonswood Arcade home">
         <img src="../v33-integration/assets/branding/dragonswood-mascot-crest.png" alt="Dragonswood mascot crest" />
-        <span><strong>DRAGONSWOOD</strong><small>ARCADE</small></span>
+        <span><strong>DRAGONSWOOD HOME</strong><small>ARCADE</small></span>
       </button>
       <div class="header-actions">
         <a class="header-chip arcade-return-link" href="../index.html#adventure">← <span>Dragonswood</span></a>
@@ -36,8 +36,8 @@
           <div class="hero-copy">
             <div class="eyebrow">THE ADVENTURER’S ARCADE</div>
             <h1>Pick a portal. <span>Make some noise.</span></h1>
-            <p>You earned your way in. Grab an Arcade Token, choose your game, and see what kind of legend you can become in 30 minutes.</p>
-            <div class="rules-ribbon"><span>🎮 Your best runs count</span><span>🏆 High scores can unlock rewards</span><span>🛡️ Arcade Tokens keep every challenge fair</span></div>
+            <p>The Home Arcade is always open. Choose a game, use Comfort mode when it helps, and play at your own pace.</p>
+            <div class="rules-ribbon"><span>🎮 No Tokens needed</span><span>🌿 Stop or switch anytime</span><span>🏆 Best runs can go on the family boards</span></div>
           </div>
         </div>
 
@@ -50,8 +50,8 @@
         <div class="panel-shell leaderboard-shell">
           <div class="panel-head">
             <button class="back-button" data-home>‹</button>
-            <div><small>HALL OF HIGH SCORES</small><h2>Arcade Leaderboard</h2><p>Best entry only. Refreshing and repeated attempts do not create extra placements.</p></div>
-            <div class="reward-rule-chip">Top 5 • Mon–Fri</div>
+            <div><small>HALL OF HIGH SCORES</small><h2>Family Arcade Boards</h2><p>Only each adventurer’s best entry appears. The board is for fun and never affects schoolwork.</p></div>
+            <div class="reward-rule-chip">Best runs</div>
           </div>
           <div class="period-tabs" role="tablist">
             <button data-period="daily" class="active">Today</button>
@@ -59,7 +59,7 @@
             <button data-period="allTime">All-Time</button>
           </div>
           <div id="leaderboardBoards" class="leaderboard-boards"></div>
-          <div class="leaderboard-note"><strong>Reward boundary:</strong> the games never grant Gold, XP, pets, fragments, or other Dragonswood rewards. Leaderboard placement creates eligibility only; the existing teacher approval/replacement/revocation rules remain in control.</div>
+          <div class="leaderboard-note"><strong>Just for fun:</strong> Arcade scores never change grades, Learning Paths, Gold, XP, pets, or access.</div>
         </div>
       </section>
 
@@ -78,7 +78,7 @@
     <dialog id="profileDialog">
       <form method="dialog" id="profileForm">
         <img class="dialog-mascot" src="../v33-integration/assets/mascot/badges/smile.webp" alt="Dragonswood dragon beside Arcade profile settings" /><small>ARCADE PROFILE</small><h2>Adventurer Name</h2>
-        <p>Your name comes from your signed-in Dragonswood profile. Arcade settings cannot change school identity or progression.</p>
+        <p>Your name comes from your signed-in family profile. Arcade settings cannot change your learning levels or progress.</p>
         <label>Dragonswood name<input id="profileInput" maxlength="32" autocomplete="off" disabled /></label>
         <label class="comfort-setting"><span><strong>Comfort mode</strong><small>Reduces shake, flashes, parallax, and fast camera/tunnel motion.</small></span><input id="comfortToggle" type="checkbox" /></label>
         <label class="performance-setting"><span><strong>Performance</strong><small>Auto adapts Void Runner to the Chromebook. Low reduces 3D workload without changing gameplay or scoring.</small></span><select id="performanceMode"><option value="auto">Auto (recommended)</option><option value="standard">Standard</option><option value="low">Chromebook Low</option></select></label>
@@ -87,6 +87,6 @@
     </dialog>
   </div>
   <script src="js/arcade-config.js?v=57.1.16"></script>
-  <script type="module" src="js/access-bootstrap.js?v=58.0.6"></script>
+  <script type="module" src="js/access-bootstrap.js?v=60.1.0"></script>
 </body>
 </html>

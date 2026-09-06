@@ -62,7 +62,7 @@
     emit(onUpdate,{status:'loading',message:'Opening your family portal…'});
     if(localPreview){
       const user={uid:'local-preview-child',displayName:'Home Adventurer'},profile={firstName:'Home',displayName:'Home Adventurer',grade:2,learningLevels:{math:2,reading:2,writing:3,science:3},supportPreferences:{calmMode:true,readAloud:true},xp:120,gold:8};
-      const controller={environment,async listVisualProfiles(){return[]},async signInWithVisualSecret(){return true},async signOut(){return true},async recordReadingActivity(){return true},async reportSpellingMission(){return true},async saveWriting(){return true},async submitWriting(){return true},dispose(){}};
+      const controller={environment,async listVisualProfiles(){return[]},async signInWithVisualSecret(){return true},async signOut(){return true},async recordReadingActivity(){return true},async reportSpellingMission(){return true},async saveWriting(){return true},async submitWriting(){return true},async requestWritingFeedback(){return{feedback:{celebration:'You made the tiny door easy to picture.',nextStep:'Add one detail about what the character hears.',tryThis:'I heard…',grownUpNote:''},cached:false}},dispose(){}};
       controllers.push(controller);queueMicrotask(()=>emit(onUpdate,{status:'authorized',user,student:studentModel(user,profile),academic:Object.freeze({scribe:null,reading:Object.freeze({rows:[],targetMinutes:15,assignedDateKeys:[],targetsByDate:{}})}),world:null,curriculumAccess:Object.freeze({unlocked:true}),spelling:Object.freeze({grade:2,results:[],completeToday:false}),homeEdition:true}));return controller;
     }
     let F;
@@ -98,6 +98,12 @@
       async reportSpellingMission(){return true},
       async saveWriting(){return true},
       async submitWriting(){return true},
+      async requestWritingFeedback(input={}){
+        if(!currentUser)throw new Error('Choose your family profile first.');
+        const call=S.functions.httpsCallable(functions,'coachHomeWriting');
+        const result=await call({prompt:String(input.prompt||'').slice(0,1200),responseText:String(input.responseText||'').slice(0,6000)});
+        return result?.data||{};
+      },
       dispose(){clear();try{authUnsub()}catch{}}
     };
 

@@ -89,27 +89,29 @@ async function readActiveAfternoonSession(now=Date.now()){
   const currentMode=A.modeName(mode),arcadeForAll=active&&currentMode==='arcade-free';
   return {active,eligible:active,mode:currentMode,arcadeForAll,morningComplete:active,curriculumComplete:active,completedCount:0,expectedCount:0,expiresAtMs:active?A.toMillis(mode.expiresAt):0};
 }
-function accessView(access,settings,session,now,testerOverride,afternoon,teacherFree={}){
+function accessView(access,settings,session,now,testerOverride,afternoon,teacherFree={},homeAccess=false){
   const afternoonAccess=afternoon?.eligible===true,afternoonActive=afternoon?.active===true,teacherFreeAccess=teacherFree?.active===true,freeAccess=testerOverride||afternoonAccess||teacherFreeAccess;
-  const effectiveSettings=freeAccess?{...settings,enabled:true}:afternoonActive?{...settings,enabled:false}:settings;
-  const effectiveAccess=freeAccess?{...access,individualEnabled:true}:access;
+  const familyFreeAccess=homeAccess===true,anyFreeAccess=freeAccess||familyFreeAccess;
+  const effectiveSettings=anyFreeAccess?{...settings,enabled:true}:afternoonActive?{...settings,enabled:false}:settings;
+  const effectiveAccess=anyFreeAccess?{...access,individualEnabled:true}:access;
   const testerRevoked=session?.testerSelfControl===true&&!testerOverride,afternoonRevoked=session?.afternoonSubstitute===true&&!afternoonAccess,effectiveSession=testerRevoked||afternoonRevoked?null:session;
   return {
     ...C.publicAccess(effectiveAccess,effectiveSettings,effectiveSession,now),testerOverride,
-    freeAccess,teacherFreeAccess,teacherFreeScope:C.text(teacherFree?.scope),teacherFreeExpiresAtMillis:Number(teacherFree?.expiresAtMs)||0,afternoonSubstituteActive:afternoonActive,afternoonSubstituteAccess:afternoonAccess,substituteArcadeForAll:afternoon?.arcadeForAll===true,substituteArcadeMode:C.text(afternoon?.mode),
+    freeAccess:anyFreeAccess,homeAccess:familyFreeAccess,teacherFreeAccess,teacherFreeScope:C.text(teacherFree?.scope),teacherFreeExpiresAtMillis:Number(teacherFree?.expiresAtMs)||0,afternoonSubstituteActive:afternoonActive,afternoonSubstituteAccess:afternoonAccess,substituteArcadeForAll:afternoon?.arcadeForAll===true,substituteArcadeMode:C.text(afternoon?.mode),
     afternoonRequirements:{morningComplete:afternoon?.morningComplete===true,curriculumComplete:afternoon?.curriculumComplete===true,completedCount:Number(afternoon?.completedCount)||0,expectedCount:Number(afternoon?.expectedCount)||0},
     afternoonExpiresAtMillis:Number(afternoon?.expiresAtMs)||0
   };
 }
 async function readPublic(uid,tester=undefined){
   const now=Date.now();
-  const [aSnap,sSnap,teacherFree]=await Promise.all([accessRef(uid).get(),settingsRef().get(),readTeacherFreeArcade(uid,now)]);
+  const [aSnap,sSnap,teacherFree,memberSnap]=await Promise.all([accessRef(uid).get(),settingsRef().get(),readTeacherFreeArcade(uid,now),familyMemberRef(uid).get()]);
   const access=aSnap.exists?aSnap.data():{},settings=sSnap.exists?sSnap.data():{};
+  const homeAccess=memberSnap.exists&&memberSnap.data()?.role==='child'&&memberSnap.data()?.active===true;
   const id=C.text(access.currentSessionId);let session=null;
   if(id){const snap=await sessionRef(id).get();if(snap.exists)session={id:snap.id,...snap.data()}}
   const afternoon=session?.afternoonSubstitute===true&&C.activeSession(session,now)?await readActiveAfternoonSession(now):await readAfternoon(uid,now);
   const resolved=tester||await readTester(uid),testerOverride=T.unlockEnabled(resolved.session,resolved.controls,'unlockArcade');
-  return accessView(access,settings,session,now,testerOverride,afternoon,teacherFree);
+  return accessView(access,settings,session,now,testerOverride,afternoon,teacherFree,homeAccess);
 }
 
 exports.getArcadeAccess=onCall(OPTIONS,async request=>{const auth=await requireStudent(request),tester=await readTester(auth.uid);return readPublic(targetUid(request),tester);});
@@ -141,14 +143,14 @@ exports.awardArcadeCriterion=onCall(OPTIONS,async request=>{
 exports.startArcadeSession=onCall(OPTIONS,async request=>{
   const auth=await requireStudent(request),uid=auth.uid,aRef=accessRef(uid),sRef=settingsRef(),newRef=db.collection('arcadeSessions').doc(),now=Date.now();
   const result=await db.runTransaction(async tx=>{
-    const [aSnap,settingsSnap,accountSnap,controlsSnap,afternoon,teacherFree]=await Promise.all([tx.get(aRef),tx.get(sRef),tx.get(testerRef(uid)),tx.get(testerControlsRef(uid)),readAfternoon(uid,now,ref=>tx.get(ref)),readTeacherFreeArcade(uid,now,ref=>tx.get(ref))]),access=aSnap.exists?aSnap.data():{},settings=settingsSnap.exists?settingsSnap.data():{};
+    const [aSnap,settingsSnap,accountSnap,controlsSnap,memberSnap,afternoon,teacherFree]=await Promise.all([tx.get(aRef),tx.get(sRef),tx.get(testerRef(uid)),tx.get(testerControlsRef(uid)),tx.get(familyMemberRef(uid)),readAfternoon(uid,now,ref=>tx.get(ref)),readTeacherFreeArcade(uid,now,ref=>tx.get(ref))]),access=aSnap.exists?aSnap.data():{},settings=settingsSnap.exists?settingsSnap.data():{};
     const tester=testerState(uid,accountSnap,controlsSnap);
-    const testerOverride=T.unlockEnabled(tester.session,tester.controls,'unlockArcade'),afternoonOverride=afternoon.eligible===true,teacherFreeOverride=teacherFree.active===true,freeAccess=testerOverride||afternoonOverride||teacherFreeOverride,effectiveSettings=freeAccess?{...settings,enabled:true}:afternoon.active?{...settings,enabled:false}:settings,effectiveAccess=freeAccess?{...access,individualEnabled:true}:access;
+    const homeAccess=memberSnap.exists&&memberSnap.data()?.role==='child'&&memberSnap.data()?.active===true,testerOverride=T.unlockEnabled(tester.session,tester.controls,'unlockArcade'),afternoonOverride=afternoon.eligible===true,teacherFreeOverride=teacherFree.active===true,freeAccess=homeAccess||testerOverride||afternoonOverride||teacherFreeOverride,effectiveSettings=freeAccess?{...settings,enabled:true}:afternoon.active?{...settings,enabled:false}:settings,effectiveAccess=freeAccess?{...access,individualEnabled:true}:access;
     let prior=null,priorRef=null;
     if(C.text(access.currentSessionId)){priorRef=sessionRef(access.currentSessionId);const snap=await tx.get(priorRef);if(snap.exists)prior={id:snap.id,...snap.data()}}
     const revokedTesterSession=prior?.testerSelfControl===true&&!testerOverride,revokedAfternoonSession=prior?.afternoonSubstitute===true&&!afternoonOverride;
     const revokedTeacherFreeSession=prior?.teacherFreeAccess===true&&!teacherFreeOverride;
-    if(prior&&C.activeSession(prior,now)&&C.effectiveEnabled(effectiveAccess,effectiveSettings)&&!revokedTesterSession&&!revokedAfternoonSession&&!revokedTeacherFreeSession)return {...accessView(access,settings,prior,now,testerOverride,afternoon,teacherFree),accessSource:C.text(prior.source),reused:true};
+    if(prior&&C.activeSession(prior,now)&&C.effectiveEnabled(effectiveAccess,effectiveSettings)&&!revokedTesterSession&&!revokedAfternoonSession&&!revokedTeacherFreeSession)return {...accessView(access,settings,prior,now,testerOverride,afternoon,teacherFree,homeAccess),accessSource:C.text(prior.source),reused:true};
     if(revokedTesterSession){tx.set(priorRef,{status:'revoked',endReason:'tester-authorization-removed',endedAt:FieldValue.serverTimestamp()},{merge:true});tx.set(aRef,{currentSessionId:'',sessionStatus:'revoked',updatedAt:FieldValue.serverTimestamp()},{merge:true});return {revokedTesterSession:true}}
     if(!C.effectiveEnabled(effectiveAccess,effectiveSettings)){
       if(prior&&prior.status==='active')tx.set(priorRef,{status:'locked',endReason:'teacher-lock',endedAt:FieldValue.serverTimestamp()},{merge:true});
@@ -157,11 +159,11 @@ exports.startArcadeSession=onCall(OPTIONS,async request=>{
     const tokens=C.clampTokens(access.tokens),cost=freeAccess?0:C.SESSION_COST;
     if(tokens<cost)throw new HttpsError('failed-precondition','Three Arcade Tokens are required.');
     if(prior&&prior.status==='active')tx.set(priorRef,{status:'expired',endReason:'expired',endedAt:FieldValue.serverTimestamp()},{merge:true});
-    const source=teacherFreeOverride?`teacher-free-${teacherFree.scope}`:afternoonOverride?(afternoon.arcadeForAll?'substitute-arcade-free':'afternoon-substitute'):testerOverride?'tester-self-control':'arcade-token-wallet',endAt=teacherFreeOverride?teacherFree.expiresAtMs:afternoonOverride?afternoon.expiresAtMs:now+C.SESSION_MS;
-    const session={uid,status:'active',cost,source,testerSelfControl:testerOverride,afternoonSubstitute:afternoonOverride,teacherFreeAccess:teacherFreeOverride,startAt:Timestamp.fromMillis(now),endAt:Timestamp.fromMillis(endAt),createdAt:FieldValue.serverTimestamp(),schemaVersion:1};
+    const source=homeAccess?'home-family':teacherFreeOverride?`teacher-free-${teacherFree.scope}`:afternoonOverride?(afternoon.arcadeForAll?'substitute-arcade-free':'afternoon-substitute'):testerOverride?'tester-self-control':'arcade-token-wallet',endAt=teacherFreeOverride?teacherFree.expiresAtMs:afternoonOverride?afternoon.expiresAtMs:now+C.SESSION_MS;
+    const session={uid,status:'active',cost,source,homeAccess,testerSelfControl:testerOverride,afternoonSubstitute:afternoonOverride,teacherFreeAccess:teacherFreeOverride,startAt:Timestamp.fromMillis(now),endAt:Timestamp.fromMillis(endAt),createdAt:FieldValue.serverTimestamp(),schemaVersion:1};
     tx.create(newRef,session);
     tx.set(aRef,{uid,tokens:tokens-cost,currentSessionId:newRef.id,sessionStatus:'active',updatedAt:FieldValue.serverTimestamp()},{merge:true});
-    return {...accessView({...access,tokens:tokens-cost,currentSessionId:newRef.id},settings,{id:newRef.id,...session},now,testerOverride,afternoon,teacherFree),accessSource:source,reused:false};
+    return {...accessView({...access,tokens:tokens-cost,currentSessionId:newRef.id},settings,{id:newRef.id,...session},now,testerOverride,afternoon,teacherFree,homeAccess),accessSource:source,reused:false};
   });
   if(result.revokedTesterSession)throw new HttpsError('failed-precondition','Tester Arcade authorization was removed. Start again only if ordinary Arcade access is available.');
   await audit('session-start',auth.uid,uid,{sessionId:result.sessionId,reused:result.reused===true,source:result.accessSource||'arcade-token-wallet'});

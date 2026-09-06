@@ -63,9 +63,9 @@ const navItems = [
   ['scribe','scribe-and-journal','Create & Write','Stories, ideas and reflection'],
   ['hall','adventurer-hall','My Adventurer','Pets, gear and inventory']
 ];
-const arcadeNav=['arcade','dragon-arcade','Dragon Arcade','3 tokens • 30 minutes'];
+const arcadeNav=['arcade','dragon-arcade','Dragon Arcade','Open anytime • no tokens'];
 const kingdomNav=['kingdom','kingdom-wars','Kingdom Wars','Teacher unlock required'];
-function studentNavItems(){return [...navItems]}
+function studentNavItems(){return [...navItems,arcadeNav]}
 
 const state = {
   page: 'adventure',
@@ -85,6 +85,9 @@ const state = {
   completedMissions: new Set(),
   gameFilter: 'All',
   writing: storageGet('writing',''),
+  writingFeedback: null,
+  writingFeedbackFor: '',
+  writingCoachBusy: false,
   academicConnected: false,
   scribeSession: null,
   scribeResponse: null,
@@ -376,7 +379,7 @@ function currentModuleId(){
 function navMarkup(){
   return `
     <div class="nav-group-title">My Dragonswood</div>
-    <nav class="portal-nav" aria-label="Family learning portal">${navItems.map(navButton).join('')}</nav>
+    <nav class="portal-nav" aria-label="Family learning portal">${studentNavItems().map(navButton).join('')}</nav>
     <div class="streak-card"><div class="streak-top"><span class="streak-flame">🌿</span><div><b>Go at your pace</b><small>Breaks and retries are always okay.</small></div></div></div>
     <button class="signout" type="button" data-signout>↪ Sign out</button>`;
 }
@@ -416,6 +419,7 @@ function pageMarkup(){
     case 'missions': return missionsPage();
     case 'games': return gamesPage();
     case 'scribe': return scribePage();
+    case 'arcade': return arcadePage();
     case 'day': return dayPage();
     case 'hall': return hallPage();
     case 'boss': return bossPage();
@@ -455,7 +459,8 @@ function adventurePage(){
   <section class="quest-cards">
     <article class="panel quest-card"><div class="quest-top"><span class="text-26">🐉</span></div><div class="eyebrow">PERSONAL LEVELS</div><h3>Learning Paths</h3><p>Short K–4 lessons chosen separately for each subject.</p><button class="btn btn-primary w-full" type="button" data-module="curriculum-quest">Start learning →</button></article>
     <article class="panel quest-card"><div class="quest-top"><span class="text-26">📚</span></div><div class="eyebrow">READ AT YOUR PACE</div><h3>Reading Path</h3><p>Practice sounds, stories, meaning, and evidence at your own reading level.</p><button class="btn btn-secondary w-full" type="button" data-module="curriculum-quest">Choose Reading →</button></article>
-    <article class="panel quest-card"><div class="quest-top"><span class="text-26">✍️</span></div><div class="eyebrow">YOUR IDEAS</div><h3>Create & Write</h3><p>Write, draw, plan, or tell a story without a timer.</p><button class="btn btn-secondary w-full" type="button" data-page="scribe">Create something →</button></article>
+    <article class="panel quest-card"><div class="quest-top"><span class="text-26">✍️</span></div><div class="eyebrow">YOUR IDEAS</div><h3>Create & Write</h3><p>Write, draw, plan, or tell a story. The Dragon Coach helps you improve without giving grades.</p><button class="btn btn-secondary w-full" type="button" data-page="scribe">Create something →</button></article>
+    <article class="panel quest-card"><div class="quest-top"><span class="text-26">🕹️</span></div><div class="eyebrow">OPEN PLAY</div><h3>Dragon Arcade</h3><p>Play the full Dragonswood Arcade anytime at home. No classroom Tokens or teacher unlocks.</p><button class="btn btn-secondary w-full" type="button" data-page="arcade">Enter the Arcade →</button></article>
   </section>`;
 }
 
@@ -484,7 +489,8 @@ const missions = [
   {module:'curriculum-quest',n:'1',kicker:'START HERE',icon:'🐉',title:'Learning Paths',desc:'Pick Math, Reading, Writing, or Science. Each subject uses the learning level your grown-up chose.',note:'Learn • Try • Show',button:'Choose a subject →',primary:true},
   {module:'curriculum-quest',n:'2',kicker:'READING CHOICE',icon:'📚',title:'Reading Path',desc:'Open Learning Paths and choose Reading for a lesson matched to your reading level.',note:'Read at your pace',button:'Choose Reading →'},
   {page:'scribe',n:'3',kicker:'CREATIVE CHOICE',icon:'✍️',title:'Create & Write',desc:'Write a sentence, a story, a list, or an idea. There is no timer and no minimum.',note:'Your ideas count',button:'Start creating →'},
-  {page:'games',n:'4',kicker:'PRACTICE CHOICE',icon:'🎮',title:'Skill Games',desc:'Practice a skill through a game. Ask a grown-up if a game feels too easy or too hard.',note:'Optional practice',button:'Choose a game →'}
+  {page:'games',n:'4',kicker:'PRACTICE CHOICE',icon:'🎮',title:'Skill Games',desc:'Practice a skill through a game. Ask a grown-up if a game feels too easy or too hard.',note:'Optional practice',button:'Choose a game →'},
+  {page:'arcade',n:'5',kicker:'OPEN PLAY',icon:'🕹️',title:'Dragon Arcade',desc:'Play any Arcade game at home without earning Tokens or waiting for a teacher unlock.',note:'Open anytime',button:'Enter the Arcade →'}
 ];
 function missionsPage(){
   return `${studentTitle('📜','TODAY’S PATH','Choose one small step','Everything is open. Start with Learning Paths, or choose the space that helps your brain learn today.')}
@@ -507,13 +513,21 @@ function gamesPage(){
   <section class="game-grid">${visible.map(g=>`<article class="panel game-card"><div class="game-visual"><img src="${g[2]}" alt="${g[3]} artwork" loading="lazy" decoding="async"></div><div class="game-copy"><div class="subject">${g[1]} PRACTICE</div><h3>${g[3]}</h3><p>${g[4]}</p><div class="game-badges"><span>🌿 Play at your pace</span></div><div class="game-actions"><button class="btn btn-primary" type="button" data-module="${g[0]}">Open game →</button></div></div></article>`).join('')}</section>`;
 }
 
+function arcadePage(){
+  return `${studentTitle('🕹️','DRAGON ARCADE','The Arcade is open','At home, you do not need classroom Tokens or a teacher unlock.')}
+    <article class="panel next-step"><div class="eyebrow">OPEN PLAY</div><div class="next-icon">🎮</div><h2>Choose a game</h2><p>Your Arcade profile and comfort settings still travel with you. A play session starts when you enter.</p><button class="btn btn-primary w-full" type="button" data-page="arcade">Enter Dragon Arcade →</button></article>`;
+}
+
 function wordCount(text){return text.trim()?text.trim().split(/\s+/).length:0}
 function scribePage(){
   const wc=wordCount(state.writing);
   const prompt='Imagine you discover a tiny door in a tree. What is behind it? You may write a sentence, a list, or a whole story.';
   const hints=['Who is there?','What do you see, hear, or feel?','What happens next?'];
+  const feedback=state.writingFeedback,feedbackIsCurrent=feedback&&state.writingFeedbackFor===state.writing;
+  const coachButton=`<button class="btn btn-primary" data-writing-coach ${wc<3||state.writingCoachBusy?'disabled':''}>${state.writingCoachBusy?'🐉 Dragon Coach is reading…':'🐉 Help me improve'}</button>`;
+  const coachPanel=feedback?`<div class="stack mt-12" aria-live="polite"><article class="pass-card"><b>🌟 Something that works</b><p>${escapeHtml(feedback.celebration)}</p></article><article class="pass-card"><b>🌱 One thing to try</b><p>${escapeHtml(feedback.nextStep)}</p></article><article class="pass-card"><b>✏️ Try this starter</b><p>${escapeHtml(feedback.tryThis)}</p></article>${feedback.grownUpNote?`<article class="pass-card"><b>🤝 Grown-up check-in</b><p>${escapeHtml(feedback.grownUpNote)}</p></article>`:''}${feedbackIsCurrent?'':'<p class="muted">You changed your draft after this feedback. Ask the Dragon Coach again when you want a fresh suggestion.</p>'}</div>`:`<p>The Dragon Coach will notice one real strength and offer one small next step. It never gives a score, grade, or ranking.</p>`;
   return `${studentTitle('✍️','CREATE & WRITE','Your ideas belong here','Write as much or as little as you want. Spelling does not have to be perfect on the first try.')}
-  <section class="scribe-layout"><div><article class="panel scribe-main-card"><div class="mission-prompt"><span class="rarity-chip">🌿 NO TIMER</span><h3>A tiny door in the oldest tree…</h3><div class="prompt-box">${escapeHtml(prompt)}</div><div class="prompt-tags">${hints.map((hint,index)=>`<span>${['💡','👀','➡️'][index]} ${escapeHtml(hint)}</span>`).join('')}</div></div><div class="writing-area"><textarea id="scribe-text" aria-label="Your writing" placeholder="Start with one word, one sentence, or your whole story…">${escapeHtml(state.writing)}</textarea><div class="writing-meta"><span>☁ Saved on this device</span><span>${wc} word${wc===1?'':'s'}</span><span>🌿 Take a break anytime</span></div><div class="row"><button class="btn btn-secondary" data-writing-hint>✨ Give me one idea</button></div></div></article></div><aside class="panel coach-card"><img class="official-mascot-art" src="assets/mascot/actions/scribe.webp" alt="Friendly Dragonswood dragon helping with writing"><div class="eyebrow center">FRIENDLY WRITING HELPER</div><h3>There is no wrong length.</h3><p>You can plan, make a list, write a sentence, or tell a full story. Ask a grown-up to type for you if that helps.</p><button class="btn btn-secondary w-full" data-writing-hint>✨ Give me one idea</button></aside></section>`;
+  <section class="scribe-layout"><div><article class="panel scribe-main-card"><div class="mission-prompt"><span class="rarity-chip">🌿 NO TIMER • NO GRADES</span><h3>A tiny door in the oldest tree…</h3><div class="prompt-box">${escapeHtml(prompt)}</div><div class="prompt-tags">${hints.map((hint,index)=>`<span>${['💡','👀','➡️'][index]} ${escapeHtml(hint)}</span>`).join('')}</div></div><div class="writing-area"><textarea id="scribe-text" aria-label="Your writing" placeholder="Start with one word, one sentence, or your whole story…">${escapeHtml(state.writing)}</textarea><div class="writing-meta"><span>☁ Saved on this device</span><span>${wc} word${wc===1?'':'s'}</span><span>🌿 Take a break anytime</span></div><div class="row"><button class="btn btn-secondary" data-writing-hint>✨ Give me one idea</button>${coachButton}</div></div></article></div><aside class="panel coach-card"><img class="official-mascot-art" src="assets/mascot/actions/scribe.webp" alt="Friendly Dragonswood dragon helping with writing"><div class="eyebrow center">DRAGON WRITING COACH</div><h3>Help, not a grade.</h3>${coachPanel}<button class="btn btn-secondary w-full" data-writing-hint>✨ Give me one idea</button></aside></section>`;
 }
 
 function dayPage(){
@@ -889,8 +903,9 @@ function bind(){
   app.querySelector('[data-reference]')?.addEventListener('click',showReference);
   app.querySelectorAll('[data-game-filter]').forEach(el=>el.addEventListener('click',()=>{state.gameFilter=el.dataset.gameFilter;render()}));
   app.querySelectorAll('[data-poll-choice]').forEach(el=>el.addEventListener('click',async()=>{try{await integrationController?.votePoll(Number(el.dataset.pollChoice));showToast('Your poll vote was saved.')}catch(err){showToast(err?.message||'Poll vote could not save.')}}));
-  app.querySelector('#scribe-text')?.addEventListener('input',e=>{state.writing=e.target.value;storageSet('writing',state.writing);const count=wordCount(state.writing),spans=e.target.nextElementSibling?.querySelectorAll('span');if(spans?.[1])spans[1].textContent=`${count} words`;const submit=app.querySelector('[data-submit-writing]');if(submit&&state.scribeResponse?.status!=='submitted')submit.disabled=count<(state.scribeSession?.minWords||5);clearTimeout(state.writingSaveTimer);if(state.scribeSession&&integrationController?.saveWriting)state.writingSaveTimer=setTimeout(()=>integrationController.saveWriting(state.writing).catch(err=>showToast(err?.message||'Draft could not save.')),500)});
+  app.querySelector('#scribe-text')?.addEventListener('input',e=>{state.writing=e.target.value;storageSet('writing',state.writing);const count=wordCount(state.writing),spans=e.target.nextElementSibling?.querySelectorAll('span');if(spans?.[1])spans[1].textContent=`${count} words`;const coach=app.querySelector('[data-writing-coach]');if(coach&&!state.writingCoachBusy)coach.disabled=count<3;const submit=app.querySelector('[data-submit-writing]');if(submit&&state.scribeResponse?.status!=='submitted')submit.disabled=count<(state.scribeSession?.minWords||5);clearTimeout(state.writingSaveTimer);if(state.scribeSession&&integrationController?.saveWriting)state.writingSaveTimer=setTimeout(()=>integrationController.saveWriting(state.writing).catch(err=>showToast(err?.message||'Draft could not save.')),500)});
   app.querySelectorAll('[data-writing-hint]').forEach(el=>el.addEventListener('click',writingHint));
+  app.querySelector('[data-writing-coach]')?.addEventListener('click',requestWritingCoach);
   app.querySelectorAll('[data-open-portfolio]').forEach(el=>el.addEventListener('click',openWritingPortfolio));
   app.querySelector('[data-submit-writing]')?.addEventListener('click',submitWriting);
   app.querySelectorAll('[data-day]').forEach(el=>el.addEventListener('click',()=>{state.day=el.dataset.day;render()}));
@@ -909,7 +924,7 @@ function setArcadeBusy(trigger,busy){
     trigger.dataset.arcadeLabel=trigger.innerHTML;
     trigger.disabled=true;
     trigger.setAttribute('aria-busy','true');
-    trigger.innerHTML='<span class="nav-icon">🕹️</span><span><span class="nav-main">Opening the Arcade gates…</span><span class="nav-sub">Counting your tokens</span></span>';
+    trigger.innerHTML=`<span class="nav-icon">🕹️</span><span><span class="nav-main">Opening the Arcade gates…</span><span class="nav-sub">${HOME_EDITION?'Starting open play':'Counting your tokens'}</span></span>`;
   }else{
     trigger.disabled=false;
     trigger.removeAttribute('aria-busy');
@@ -918,7 +933,7 @@ function setArcadeBusy(trigger,busy){
 }
 
 function arcadeBlockedMessage(access){
-  if(access?.testerOverride===true||access?.afternoonSubstituteAccess===true||access?.teacherFreeAccess===true)return '';
+  if(access?.homeAccess===true||access?.testerOverride===true||access?.afternoonSubstituteAccess===true||access?.teacherFreeAccess===true)return '';
   if(access?.afternoonSubstituteActive===true){const requirements=access.afternoonRequirements||{},missing=[requirements.morningComplete!==true?'Morning Work':'',requirements.curriculumComplete!==true?'every Current Quest lesson':''].filter(Boolean);return `Finish ${missing.join(' and ')} to unlock free Afternoon Arcade Time.`}
   if(access?.teacherEnabled!==true)return 'Arcade Time is still locked by your teacher.';
   const tokens=Math.max(0,Math.min(3,Number(access?.tokens)||0));
@@ -928,7 +943,7 @@ function arcadeBlockedMessage(access){
 async function enterArcade(trigger){
   if(arcadeEntering)return;
   if(!arcadePortal){showToast('Arcade Time is unavailable.');return}
-  arcadeEntering=true;setArcadeBusy(trigger,true);showToast('Counting your Arcade Tokens…');
+  arcadeEntering=true;setArcadeBusy(trigger,true);showToast(HOME_EDITION?'Opening the Dragon Arcade…':'Counting your Arcade Tokens…');
   try{
     let access=await arcadePortal.getAccess();
     if(access?.teacherFreeAccess!==true&&requiredWorkLocked('arcade')){showRequiredWorkDialog('arcade');throw new Error('Finish Dragon’s Path before using Arcade Time.')}
@@ -936,7 +951,7 @@ async function enterArcade(trigger){
     showToast(access?.active===true?'Reopening your Arcade session…':'Turning the Arcade hourglass…');
     await arcadePortal.preflight?.();
     if(access?.active!==true){
-      showToast(access?.teacherFreeAccess===true?'Starting your free one-hour Arcade session—no Tokens used…':access?.afternoonSubstituteAccess===true?'Starting free Afternoon Arcade Time—no Tokens used…':access?.testerOverride===true?'Starting your tester Arcade session…':'Using 3 Tokens and starting 30 minutes…');
+      showToast(access?.homeAccess===true?'Starting Home Arcade—no Tokens needed…':access?.teacherFreeAccess===true?'Starting your free one-hour Arcade session—no Tokens used…':access?.afternoonSubstituteAccess===true?'Starting free Afternoon Arcade Time—no Tokens used…':access?.testerOverride===true?'Starting your tester Arcade session…':'Using 3 Tokens and starting 30 minutes…');
       access=await arcadePortal.startSession();
     }
     if(access?.active!==true)throw new Error('Arcade session did not start. Your Tokens were not intentionally spent by this page.');
@@ -983,6 +998,19 @@ function showReference(){
 }
 function writingHint(){
   const wc=wordCount(state.writing);const hint=wc<10?'Start by naming what the character can see, hear, or feel.':wc<40?'Choose one moment and slow it down with a sensory detail.':'Reread your last two sentences. Which one could use a stronger verb?';openDialog('Writing Coach Hint',`<p>${hint}</p><p class="muted">The coach gives a nudge, not the answer.</p>`)
+}
+async function requestWritingCoach(){
+  const responseText=state.writing.trim(),wc=wordCount(responseText);
+  if(wc<3){openDialog('Add a few words first','<p>Write at least three words so the Dragon Coach has something real to notice.</p>');return}
+  if(state.writingCoachBusy)return;
+  state.writingCoachBusy=true;render();
+  try{
+    if(!integrationController?.requestWritingFeedback)throw new Error('The Dragon Coach is not connected yet.');
+    const result=await integrationController.requestWritingFeedback({prompt:'Imagine you discover a tiny door in a tree. What is behind it?',responseText});
+    if(!result?.feedback)throw new Error(result?.reason||'The Dragon Coach could not make a suggestion.');
+    state.writingFeedback=result.feedback;state.writingFeedbackFor=responseText;showToast('Your Dragon Coach feedback is ready.');
+  }catch(err){openDialog('The Dragon Coach needs a moment',`<p>${escapeHtml(err?.message||'Feedback is unavailable right now. Your writing is still safely saved on this device.')}</p>`)}
+  finally{state.writingCoachBusy=false;render()}
 }
 function openWritingPortfolio(){
   const responses=state.scribePortfolio?.responses||[];

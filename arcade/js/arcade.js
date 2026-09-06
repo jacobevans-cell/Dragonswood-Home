@@ -1,6 +1,6 @@
 import {GAMES,BOARDS} from './game-registry.js?v=58.0.3';
 import {initLeaderboard,submitBestScore,getTop} from './leaderboard-service.js?v=57.1.16';
-import {getFirebaseContext,recordArcadeGameResult} from './access-client.js?v=58.0.2';
+import {getFirebaseContext,recordArcadeGameResult} from './access-client.js?v=60.1.0';
 const $=selector=>document.querySelector(selector);
 const screens=[...document.querySelectorAll('.screen')];
 const CONFIG=window.DRAGONSWOOD_ARCADE_CONFIG||{};
