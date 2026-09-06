@@ -15,4 +15,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - run: npm run home:visual-auth:test
       - run: npm run home:isolation:audit

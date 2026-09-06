@@ -55,6 +55,13 @@ service cloud.firestore {
       allow create, update, delete: if isTeacher();
     }
 
+    // Visual child credentials are readable and writable only by trusted
+    // Cloud Functions using the Admin SDK. The public site receives only the
+    // profile nickname and picture returned by listHomeVisualProfiles.
+    match /homeVisualLogins/{profileId} {
+      allow read, write: if false;
+    }
+
     function readingSettings() {
       return get(/databases/$(database)/documents/classData/gradebookSettings).data;
     }

@@ -3,11 +3,12 @@
 const {onCall,HttpsError}=require("firebase-functions/v2/https");
 const {defineSecret}=require("firebase-functions/params");
 const admin=require("firebase-admin");
+const {getFirestore,FieldValue,Timestamp}=require("firebase-admin/firestore");
 const crypto=require("node:crypto");
 const {QUICKWRITE_SYSTEM,QUICKWRITE_SCHEMA,evaluateQuickwriteEvidence}=require("./quickwrite-grader");
 
 if(!admin.apps.length)admin.initializeApp();
-const db=admin.firestore(),FieldValue=admin.firestore.FieldValue;
+const db=getFirestore();
 const OPENAI_API_KEY=defineSecret("OPENAI_API_KEY");
 const OPENAI_ADMIN_KEY=defineSecret("OPENAI_ADMIN_KEY");
 const DEPLOY_GRADING_ONLY=process.env.DRAGONSWOOD_GRADING_ONLY==="1";
@@ -370,3 +371,5 @@ exports.synthesizeBrianNarration=onCall({region:"us-central1",timeoutSeconds:60,
   }catch(error){console.error("Brian narration synthesis failed",error?.message||error);throw new HttpsError("unavailable","Brian narration is temporarily unavailable.")}
 });
 }
+
+Object.assign(exports,require("./home-visual-auth").createHomeVisualAuth({onCall,HttpsError,admin,db,FieldValue,Timestamp,teacherEmail:TEACHER_EMAIL}));

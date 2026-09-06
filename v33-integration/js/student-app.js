@@ -29,6 +29,31 @@ let pendingSubstituteNotice='';
 let lastAttentionChime='';
 let adventurePetActor=null,adventureMotionTimer=null;
 
+const HOME_LOGIN_COLORS=Object.freeze([
+  Object.freeze({id:'blue',label:'Blue',value:'#2878d7'}),
+  Object.freeze({id:'green',label:'Green',value:'#2f9e62'}),
+  Object.freeze({id:'purple',label:'Purple',value:'#8556d8'}),
+  Object.freeze({id:'orange',label:'Orange',value:'#e87825'}),
+  Object.freeze({id:'pink',label:'Pink',value:'#d85b9c'}),
+  Object.freeze({id:'yellow',label:'Yellow',value:'#e0b72f'})
+]);
+const HOME_LOGIN_ANIMALS=Object.freeze([
+  Object.freeze({id:'fox',label:'Fox',picture:'🦊'}),
+  Object.freeze({id:'owl',label:'Owl',picture:'🦉'}),
+  Object.freeze({id:'bear',label:'Bear',picture:'🐻'}),
+  Object.freeze({id:'rabbit',label:'Rabbit',picture:'🐰'}),
+  Object.freeze({id:'turtle',label:'Turtle',picture:'🐢'}),
+  Object.freeze({id:'fish',label:'Fish',picture:'🐟'})
+]);
+const HOME_LOGIN_AVATARS=Object.freeze({
+  nyx:'assets/art/pet-nyx.jpg',ember:'assets/art/pet-ember.jpg',mochi:'assets/art/pet-mochi.jpg',blink:'assets/art/pet-blink.jpg'
+});
+const HOME_LOGIN_PREVIEW_PROFILES=Object.freeze([
+  Object.freeze({id:'child-one',nickname:'Adventurer One',avatarId:'nyx',preview:true}),
+  Object.freeze({id:'child-two',nickname:'Adventurer Two',avatarId:'ember',preview:true})
+]);
+const homeVisualLogin={step:'profile',profile:null,colorId:'',profiles:[],profilesLoading:false,profilesLoaded:false,profilesError:'',submitting:false,error:''};
+
 const navItems = [
   ['adventure','my-adventurer','My Adventurer','Hero, pet & profile'],
   ['missions','dragons-path','Dragon’s Path','Today’s required quests','1'],
@@ -732,7 +757,60 @@ function authGate(){
   const canSignIn=status==='signed-out'||status==='unauthorized'||status==='error';
   const emulatorForm=!IS_PRODUCTION&&canSignIn?'<div class="stack mt-12" data-emulator-signin><label>Emulator email<input class="w-full" type="email" autocomplete="username" data-emulator-email></label><label>Emulator password<input class="w-full" type="password" autocomplete="current-password" data-emulator-password></label><button class="btn btn-secondary w-full" type="button" data-emulator-submit>Sign in to local emulator</button></div>':'';
   const loadingSkeleton=status==='loading'&&window.DWImmersiveUI?window.DWImmersiveUI.skeletonMarkup('portal'):'';
-  return `<div class="portal student-shell" data-${IS_PRODUCTION?'release':'tester-build'}="v3.3"><main class="student-main" id="page-content"><div class="student-content"><section class="panel next-step"><div class="eyebrow">${IS_PRODUCTION?'SECURE STUDENT PORTAL':'SECURE INTEGRATION CANDIDATE'}</div><img class="auth-crest" src="assets/branding/dragonswood-mascot-crest.png" alt="Dragonswood mascot crest"><h2>${status==='unauthorized'?'The gate is sealed':status==='loading'?'Opening the portal…':'Dragonswood Sign In'}</h2><p>${escapeHtml(message)}</p>${loadingSkeleton}${canSignIn?'<button class="btn btn-primary w-full" type="button" data-signin>Enter with your school Google account</button>':''}${emulatorForm}<p class="center muted mt-12 text-11">${IS_PRODUCTION?'Explore Academy • secure student portal':`${escapeHtml(window.DWV33Integration?.environment||'loading')} • no production writes enabled`}</p></section></div></main>${IS_PRODUCTION?'':'<div class="tester-ribbon">V3.3 INTEGRATION • SAFE MODE</div>'}</div>`;
+  const signInContent=canSignIn?homeVisualSignInMarkup():`<h2>${status==='loading'?'Opening the portal…':'Checking your entry…'}</h2><p>${escapeHtml(message)}</p>${loadingSkeleton}`;
+  return `<div class="portal student-shell" data-${IS_PRODUCTION?'release':'tester-build'}="v3.3"><main class="student-main" id="page-content"><div class="student-content"><section class="panel next-step home-login-panel"><div class="eyebrow">DRAGONSWOOD HOME</div><img class="auth-crest" src="assets/branding/dragonswood-mascot-crest.png" alt="Dragonswood mascot crest">${signInContent}${emulatorForm}<div class="home-grownup-row"><a class="home-grownup-link" href="../home-parent-setup.html">Grown-up setup</a></div></section></div></main>${IS_PRODUCTION?'':'<div class="tester-ribbon">V3.3 INTEGRATION • SAFE MODE</div>'}</div>`;
+}
+
+function homeLoginProfiles(){
+  if(homeVisualLogin.profiles.length)return homeVisualLogin.profiles;
+  return window.DWV33Integration?.firebaseConfigured?[]:HOME_LOGIN_PREVIEW_PROFILES;
+}
+function homeLoginProgress(){
+  const current=homeVisualLogin.step==='profile'?1:(homeVisualLogin.step==='color'?2:3);
+  return `<ol class="home-login-progress" aria-label="Sign-in progress"><li class="${current===1?'current':current>1?'done':''}"><span>1</span>Me</li><li class="${current===2?'current':current>2?'done':''}"><span>2</span>Color</li><li class="${current===3?'current':''}"><span>3</span>Animal</li></ol>`;
+}
+function homeProfileAvatar(profile){return HOME_LOGIN_AVATARS[String(profile?.avatarId||'')]||HOME_LOGIN_AVATARS.nyx}
+function homeVisualSignInMarkup(){
+  const profiles=homeLoginProfiles(),step=homeVisualLogin.step,error=homeVisualLogin.error||homeVisualLogin.profilesError;
+  const preview=profiles.some(profile=>profile.preview===true);
+  let heading='',instruction='',choices='';
+  if(step==='color'&&homeVisualLogin.profile){
+    heading=`Hi, ${escapeHtml(homeVisualLogin.profile.nickname)}!`;
+    instruction='Tap your secret color.';
+    choices=`<div class="home-choice-grid home-color-grid">${HOME_LOGIN_COLORS.map(color=>`<button class="home-choice home-color-choice" type="button" data-home-color="${color.id}" aria-label="${color.label}"><span class="home-color-swatch" style="--home-choice-color:${color.value}" aria-hidden="true"></span><strong>${color.label}</strong></button>`).join('')}</div><button class="home-back-button" type="button" data-home-back>← Back to profiles</button>`;
+  }else if(step==='animal'&&homeVisualLogin.profile){
+    heading='One more choice';
+    instruction=homeVisualLogin.submitting?'Opening your adventure…':'Now tap your secret animal.';
+    choices=`<div class="home-choice-grid home-animal-grid">${HOME_LOGIN_ANIMALS.map(animal=>`<button class="home-choice home-animal-choice" type="button" data-home-animal="${animal.id}" ${homeVisualLogin.submitting?'disabled':''}><span class="home-animal-picture" aria-hidden="true">${animal.picture}</span><strong>${animal.label}</strong></button>`).join('')}</div><button class="home-back-button" type="button" data-home-back ${homeVisualLogin.submitting?'disabled':''}>← Back to colors</button>`;
+  }else{
+    heading='Who is learning?';
+    instruction=homeVisualLogin.profilesLoading?'Finding your adventurers…':'Tap your picture.';
+    choices=homeVisualLogin.profilesLoading?'<div class="home-login-wait" role="status">Opening the family gate…</div>':profiles.length?`<div class="home-profile-grid">${profiles.map(profile=>`<button class="home-profile-choice" type="button" data-home-profile="${escapeHtml(profile.id)}"><img src="${homeProfileAvatar(profile)}" alt=""><strong>${escapeHtml(profile.nickname||'Adventurer')}</strong></button>`).join('')}</div>`:'<div class="home-login-empty"><strong>No child profiles yet.</strong><span>Ask a grown-up to finish family setup.</span></div>';
+  }
+  const notice=preview?'<p class="home-preview-note">Preview only — the separate Home Firebase project is not connected yet.</p>':'';
+  const feedback=error?`<p class="home-login-error" role="alert">${escapeHtml(error)}</p>`:'';
+  return `${homeLoginProgress()}<h2>${heading}</h2><p class="home-login-instruction">${instruction}</p>${feedback}${choices}${notice}`;
+}
+
+async function ensureHomeVisualProfiles(){
+  if(homeVisualLogin.profilesLoaded||homeVisualLogin.profilesLoading||!integrationController?.listVisualProfiles)return;
+  if(!window.DWV33Integration?.firebaseConfigured){homeVisualLogin.profilesLoaded=true;return}
+  homeVisualLogin.profilesLoading=true;homeVisualLogin.profilesError='';render();
+  try{homeVisualLogin.profiles=await integrationController.listVisualProfiles();homeVisualLogin.profilesLoaded=true}
+  catch(error){console.warn('[Dragonswood visual profiles]',error);homeVisualLogin.profilesError='The family profiles could not load. A grown-up can check setup.'}
+  finally{homeVisualLogin.profilesLoading=false;render()}
+}
+function resetHomeVisualLogin(step='profile'){
+  homeVisualLogin.step=step;homeVisualLogin.error='';homeVisualLogin.submitting=false;
+  if(step==='profile'){homeVisualLogin.profile=null;homeVisualLogin.colorId=''}
+  if(step==='color')homeVisualLogin.colorId='';
+}
+function homeVisualErrorMessage(error){
+  const code=String(error?.code||'');
+  if(code.includes('resource-exhausted'))return 'Too many tries. Take a 10-minute break, then try again.';
+  if(code.includes('invalid-argument'))return 'That color and animal did not match. Try again.';
+  if(code.includes('permission-denied'))return 'This profile is paused. Ask a grown-up for help.';
+  return 'The family gate could not open. Check the connection and try again.';
 }
 let renderedViewportKey=location.hash,viewportRestoreToken=0;
 function restoreViewportAfterRender(scrollX,scrollY,key){
@@ -777,6 +855,17 @@ function render(){
 function bindAuthGate(){
   app.querySelector('[data-signin]')?.addEventListener('click',async()=>{try{await integrationController?.signIn()}catch(err){console.warn('[Dragonswood sign-in]',err);showToast('The portal did not open. Check your connection and try again.')}});
   app.querySelector('[data-emulator-submit]')?.addEventListener('click',async()=>{const email=app.querySelector('[data-emulator-email]')?.value||'',password=app.querySelector('[data-emulator-password]')?.value||'';try{await integrationController?.signInForEmulator(email,password)}catch(err){showToast(`Emulator sign-in failed: ${err?.code||err?.message||err}`)}});
+  app.querySelectorAll('[data-home-profile]').forEach(button=>button.addEventListener('click',()=>{const profile=homeLoginProfiles().find(row=>row.id===button.dataset.homeProfile);if(!profile)return;homeVisualLogin.profile=profile;homeVisualLogin.step='color';homeVisualLogin.error='';render()}));
+  app.querySelectorAll('[data-home-color]').forEach(button=>button.addEventListener('click',()=>{homeVisualLogin.colorId=button.dataset.homeColor||'';homeVisualLogin.step='animal';homeVisualLogin.error='';render()}));
+  app.querySelector('[data-home-back]')?.addEventListener('click',()=>{resetHomeVisualLogin(homeVisualLogin.step==='animal'?'color':'profile');render()});
+  app.querySelectorAll('[data-home-animal]').forEach(button=>button.addEventListener('click',async()=>{
+    if(homeVisualLogin.submitting||!homeVisualLogin.profile||!homeVisualLogin.colorId)return;
+    if(homeVisualLogin.profile.preview||!window.DWV33Integration?.firebaseConfigured){homeVisualLogin.error='This is the visual preview. A grown-up still needs to connect Dragonswood Home to Firebase.';render();return}
+    homeVisualLogin.submitting=true;homeVisualLogin.error='';render();
+    try{await integrationController?.signInWithVisualSecret({profileId:homeVisualLogin.profile.id,colorId:homeVisualLogin.colorId,animalId:button.dataset.homeAnimal})}
+    catch(error){console.warn('[Dragonswood visual sign-in]',error);homeVisualLogin.submitting=false;homeVisualLogin.step='color';homeVisualLogin.colorId='';homeVisualLogin.error=homeVisualErrorMessage(error);render()}
+  }));
+  queueMicrotask(ensureHomeVisualProfiles);
 }
 
 function currentSpellingWeek(){

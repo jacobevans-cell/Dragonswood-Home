@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#05091b">
+  <title>Dragonswood Home | Family Sign-In Setup</title>
+  <link rel="icon" href="v33-integration/assets/branding/dragonswood-mascot-crest.png" type="image/png">
+  <link rel="stylesheet" href="v33-integration/css/dragonswood-fonts.css?v=1.1">
+  <link rel="stylesheet" href="v33-integration/css/dragonswood.css?v=58.0.14">
+  <link rel="stylesheet" href="v33-integration/css/home-parent-setup.css?v=1.0.0">
+</head>
+<body class="student-app home-setup-page">
+  <a class="skip-link" href="#setup-main">Skip to setup</a>
+  <main id="setup-main" class="home-setup-shell">
+    <header class="panel home-setup-hero">
+      <img src="v33-integration/assets/branding/dragonswood-mascot-crest.png" alt="Dragonswood mascot crest">
+      <div><div class="eyebrow">GROWN-UP AREA</div><h1>Family Sign-In Setup</h1><p>Create each child’s big picture button and private color + animal sign-in.</p></div>
+      <a class="btn btn-secondary" href="index.html">← Child sign-in</a>
+    </header>
+    <section class="panel home-setup-intro">
+      <h2>Grown-up sign-in</h2>
+      <p>Only the authorized parent Google account can save or reset these choices. The actual color-and-animal combination is converted to a salted security hash and is never saved in the public website code.</p>
+      <div class="home-setup-actions"><button class="btn btn-primary" type="button" data-parent-signin>Sign in with Google</button><button class="btn btn-secondary" type="button" data-parent-signout hidden>Sign out</button></div>
+      <p class="home-setup-status" data-parent-status role="status" aria-live="polite">Checking Home Firebase setup…</p>
+    </section>
+    <section data-profile-setup hidden>
+      <div class="home-setup-heading"><div><div class="eyebrow">TWO FAMILY SLOTS</div><h2>Choose each adventurer’s sign-in</h2></div><p>Use a preferred name or nickname. You can reset the picture secret at any time.</p></div>
+      <div class="home-profile-forms" data-profile-forms></div>
+    </section>
+  </main>
+  <script src="home-firebase-config.js?v=1.0.0"></script>
+  <script type="module" src="home-parent-setup.js?v=1.0.0"></script>
+</body>
+</html>

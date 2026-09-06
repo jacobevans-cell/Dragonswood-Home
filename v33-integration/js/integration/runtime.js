@@ -8,7 +8,7 @@
   const Tester=window.DWTesterAccess;
   if(!Core||!Academic||!World||!Operations||!Passes||!Tester)throw new Error('The V3.3 integration contracts must load before the runtime.');
 
-  const PRODUCTION_FIREBASE_CONFIG=Object.freeze({apiKey:'HOME_FIREBASE_NOT_CONFIGURED',authDomain:'home-auth-not-configured.invalid',projectId:'dragonswood-home-not-configured',storageBucket:'home-storage-not-configured.invalid',messagingSenderId:'000000000001',appId:'1:000000000001:web:home-not-configured',measurementId:''});
+  const PRODUCTION_FIREBASE_CONFIG=window.DRAGONSWOOD_HOME_FIREBASE_CONFIG||Object.freeze({apiKey:'HOME_FIREBASE_NOT_CONFIGURED',authDomain:'home-auth-not-configured.invalid',projectId:'dragonswood-home-not-configured',storageBucket:'home-storage-not-configured.invalid',messagingSenderId:'000000000001',appId:'1:000000000001:web:home-not-configured',measurementId:''});
   const EMULATOR_FIREBASE_CONFIG=Object.freeze({apiKey:'demo-key',authDomain:'demo-dragonswood-v33.localhost',projectId:'demo-dragonswood-v33',storageBucket:'demo-dragonswood-v33.appspot.com',messagingSenderId:'000000000000',appId:'1:000000000000:web:demo-v33'});
   const TEACHER=Core.TEACHER_EMAIL;
   const VERSION='v33-student-beta-1';
@@ -223,6 +223,8 @@
     }
     const controller={environment,
       async signIn(){const provider=new S.auth.GoogleAuthProvider();return S.auth.signInWithPopup(auth,provider)},async signOut(){return S.auth.signOut(auth)},
+      async listVisualProfiles(){const call=S.functions.httpsCallable(functions,'listHomeVisualProfiles'),result=await call({});return Array.isArray(result?.data?.profiles)?result.data.profiles:[]},
+      async signInWithVisualSecret(input={}){const call=S.functions.httpsCallable(functions,'homeVisualSignIn'),result=await call({profileId:String(input.profileId||''),colorId:String(input.colorId||''),animalId:String(input.animalId||'')});const token=String(result?.data?.token||'');if(!token)throw new Error('The family sign-in token was not returned.');return S.auth.signInWithCustomToken(auth,token)},
       async signInForEmulator(email,password){if(environment!=='emulator')throw new Error('Password sign-in is available only in the local emulator.');return S.auth.signInWithEmailAndPassword(auth,String(email||'').trim(),String(password||''))},
       async saveWriting(responseText){requireWrite();const session=Academic.normalizeSession(lastScribe);if(!session)throw new Error('No active writing mission.');const id=Academic.sessionResponseId(session.id,currentUser.uid);await S.firestore.setDoc(S.firestore.doc(db,'writingResponses',id),writingPayload(session,responseText,'draft'),{merge:true});return id},
       async submitWriting(responseText){requireWrite();const session=Academic.normalizeSession(lastScribe);if(!session)throw new Error('No active writing mission.');const metrics=Academic.writingMetrics(responseText);if(metrics.wordCount<session.minWords)throw new Error(`Write at least ${session.minWords} words before submitting.`);const id=Academic.sessionResponseId(session.id,currentUser.uid);const existing=lastResponses.find(row=>row.id===id);if(existing?.status==='submitted')throw new Error('This writing mission was already submitted.');await S.firestore.setDoc(S.firestore.doc(db,'writingResponses',id),writingPayload(session,responseText,'submitted'),{merge:true});return id},
@@ -419,5 +421,6 @@
   }
 
   window.addEventListener('pagehide',()=>controllers.splice(0).forEach(c=>{try{c.dispose()}catch{}}),{once:true});
-  window.DWV33Integration=Object.freeze({version:VERSION,environment,startStudent,startTeacher,core:Core,academic:Academic,world:World,operations:Operations});
+  const firebaseConfigured=environment==='emulator'||(PRODUCTION_FIREBASE_CONFIG.projectId!=='dragonswood-home-not-configured'&&PRODUCTION_FIREBASE_CONFIG.apiKey!=='HOME_FIREBASE_NOT_CONFIGURED');
+  window.DWV33Integration=Object.freeze({version:VERSION,environment,firebaseConfigured,startStudent,startTeacher,core:Core,academic:Academic,world:World,operations:Operations});
 })();

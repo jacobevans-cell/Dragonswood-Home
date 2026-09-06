@@ -28,6 +28,36 @@ rules and Cloud Functions use that record to authorize child access.
 The original school repository and Firebase project are not deployment targets
 for this repository.
 
+## Child-friendly picture sign-in
+
+The Home portal includes a three-tap child flow:
+
+1. Tap the child's profile picture.
+2. Tap the child's secret color.
+3. Tap the child's secret animal.
+
+The color and animal are verified by a Firebase Cloud Function. Their raw values
+are never stored in the public source code or sent back when profiles are listed.
+Only a salted `scrypt` hash is stored in the locked `homeVisualLogins`
+collection. Five unsuccessful attempts trigger a ten-minute pause. The parent
+keeps a normal Google sign-in and can create or reset both child profiles at
+`home-parent-setup.html`.
+
+After installing the Home Firebase configuration:
+
+1. In Firebase Authentication, enable the Google provider.
+2. Deploy only the Home rules with
+   `firebase deploy --config firebase.v33-release.json --only firestore:rules`.
+3. Deploy only the three visual-login functions with
+   `firebase deploy --config firebase.academic-ai.json --only functions:academic-ai:listHomeVisualProfiles,functions:academic-ai:homeVisualSignIn,functions:academic-ai:configureHomeVisualProfile`.
+4. Open `home-parent-setup.html` from the Home website and sign in with
+   `jacobicusjax@gmail.com`.
+5. Set each preferred name, profile picture, school grade, secret color, and
+   secret animal. The function creates the child-only Firebase accounts and the
+   required `familyMembers` records automatically.
+
+Run `npm run home:visual-auth:test` to verify the visual-secret hashing contract.
+
 **Current build: v50.0 — Scribe Arena**
 
 ## New in v50
