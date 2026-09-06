@@ -1,0 +1,59 @@
+{
+  "hosting": {
+    "site": "dragonswood-home",
+    "public": ".",
+    "ignore": [
+      ".firebase/**",
+      ".firebaserc",
+      ".git/**",
+      ".github/**",
+      "**/node_modules/**",
+      "firebase*.json",
+      "firestore.rules",
+      "package.json",
+      "functions-academic-ai/**",
+      "functions-home-auth/**",
+      "functions-arcade-access/index.js",
+      "functions-arcade-access/package.json",
+      "functions-arcade-access/*-selftest.cjs",
+      "functions-arcade-access/seed-true-testers.cjs",
+      "tools/**",
+      "docs/**",
+      "staged-systems/**",
+      "v33-integration/tools/**",
+      "**/*-selftest.cjs",
+      "**/*.md",
+      "**/*.txt",
+      "**/*.cmd"
+    ],
+    "headers": [
+      {
+        "source": "**/*.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      },
+      {
+        "source": "/home-firebase-config.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-store"
+          }
+        ]
+      },
+      {
+        "source": "/dragonswood-sw.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      }
+    ]
+  }
+}
