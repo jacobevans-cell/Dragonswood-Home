@@ -501,6 +501,44 @@ service cloud.firestore {
       allow update, delete: if isTeacher();
     }
 
+    // Home Learning Paths are private to one child and the grown-up account.
+    // The child may save only the small, predictable progress record produced
+    // by the Home Curriculum Quest. No sibling rankings or class records exist.
+    match /students/{studentId}/homeLearningProgress/{progressId} {
+      allow read: if isTeacher() || (isOwner(studentId) && isFamilyChild());
+
+      allow create, update: if isOwner(studentId)
+                            && isFamilyChild()
+                            && request.resource.data.keys().hasOnly([
+                              'studentId','subject','level','lessonId','status','step',
+                              'learned','answers','correctCount','showResponse',
+                              'dateKey','completedAt','updatedAt'
+                            ])
+                            && request.resource.data.studentId == studentId
+                            && request.resource.data.subject in ['math','reading','writing','science']
+                            && request.resource.data.level is int
+                            && request.resource.data.level >= 0
+                            && request.resource.data.level <= 4
+                            && request.resource.data.lessonId is string
+                            && request.resource.data.lessonId.size() > 0
+                            && request.resource.data.lessonId.size() <= 80
+                            && request.resource.data.status in ['in-progress','complete']
+                            && request.resource.data.step in ['learn','try','show','complete']
+                            && request.resource.data.learned is bool
+                            && request.resource.data.answers is map
+                            && request.resource.data.answers.keys().size() <= 10
+                            && request.resource.data.correctCount is int
+                            && request.resource.data.correctCount >= 0
+                            && request.resource.data.correctCount <= 10
+                            && request.resource.data.showResponse is string
+                            && request.resource.data.showResponse.size() <= 3000
+                            && request.resource.data.dateKey is string
+                            && request.resource.data.dateKey.size() <= 10
+                            && request.resource.data.updatedAt == request.time;
+
+      allow delete: if isTeacher();
+    }
+
 
     // Curriculum activity validator safety valve.
     // Students can request review of their own rejected work; only the teacher can resolve requests.

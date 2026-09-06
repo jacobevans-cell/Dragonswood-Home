@@ -1,4 +1,5 @@
 const app = document.querySelector('#app');
+const HOME_EDITION = true;
 const IS_PRODUCTION = window.DWV33Integration?.environment === 'production';
 const TESTER_KEY = IS_PRODUCTION ? 'dw-v33' : 'dw-v33-tester';
 const SIMULATED_DATE_KEY='dw-tester-simulated-date';
@@ -22,6 +23,7 @@ const passAlertBuckets=new Map();
 const moduleHost=window.DWV33Modules;
 const arcadePortal=window.DWV33ArcadePortal;
 const kingdomPortal=window.DWV33KingdomPortal;
+const HOME_ALLOWED_MODULES=new Set(['curriculum-quest','adventurer-hall','math-operations','fraction-forge']);
 const REQUIRED_WORK_PAGES=new Set(['games','hall','boss','leaderboards','kingdom','arcade']);
 const AFTERNOON_GAME_MODULES=new Set(['decimal-deception','math-operations','fraction-forge','elemental-laboratory','cosmic-architect','arcane-forge','deep-time-lab']);
 let pendingRequiredWorkNotice='';
@@ -55,19 +57,15 @@ const HOME_LOGIN_PREVIEW_PROFILES=Object.freeze([
 const homeVisualLogin={step:'profile',profile:null,colorId:'',profiles:[],profilesLoading:false,profilesLoaded:false,profilesError:'',submitting:false,error:''};
 
 const navItems = [
-  ['adventure','my-adventurer','My Adventurer','Hero, pet & profile'],
-  ['missions','dragons-path','Dragon’s Path','Today’s required quests','1'],
-  ['games','quest-games','Quest Games','Learn through adventure'],
-  ['scribe','scribe-and-journal','Scribe & Journal','Write, create & reflect'],
-  ['day','schedule','Schedule','Classes, jobs & events'],
-  ['hall','adventurer-hall','Adventurer Hall','Gear, pets & inventory'],
-  ['boss','boss-battle','Boss Battle','Daily class challenge'],
-  ['leaderboards','hall-of-champions','Hall of Champions','Rankings, effort & growth'],
-  ['poll','dragon-council','Dragon Council','Class questions & votes']
+  ['adventure','my-adventurer','My Home','My character and next step'],
+  ['missions','dragons-path','Today’s Path','A calm plan for today'],
+  ['games','quest-games','Skill Games','Practice through adventure'],
+  ['scribe','scribe-and-journal','Create & Write','Stories, ideas and reflection'],
+  ['hall','adventurer-hall','My Adventurer','Pets, gear and inventory']
 ];
 const arcadeNav=['arcade','dragon-arcade','Dragon Arcade','3 tokens • 30 minutes'];
 const kingdomNav=['kingdom','kingdom-wars','Kingdom Wars','Teacher unlock required'];
-function studentNavItems(){return [...navItems,...(kingdomPortal?[kingdomNav]:[]),...(arcadePortal?[arcadeNav]:[])]}
+function studentNavItems(){return [...navItems]}
 
 const state = {
   page: 'adventure',
@@ -131,8 +129,8 @@ function substituteModeActive(){const expires=Number(state.substituteMode?.expir
 function afternoonSubstituteActive(){return substituteModeActive()&&state.substituteMode?.afternoon===true}
 function afternoonSubstituteEligible(){return afternoonSubstituteActive()&&state.morningWorkComplete===true&&state.completedMissions.has('curriculum')}
 function afternoonDestination(target){const id=String(target||'');return id==='games'||id==='arcade'||AFTERNOON_GAME_MODULES.has(id)}
-function substituteBlocked(target){const id=String(target||'');if(!substituteModeActive())return false;if(afternoonSubstituteActive()&&afternoonDestination(id))return false;return ['kingdom','deep-time-lab','dragon-tongues','arcade','boss','boss-battle'].includes(id)}
-function moduleAllowed(id){return moduleHost?.allowed(id,{dailyAccessUnlocked:afternoonSubstituteEligible()&&AFTERNOON_GAME_MODULES.has(String(id||''))?true:state.dailyAccessUnlocked})}
+function substituteBlocked(target){if(HOME_EDITION)return false;const id=String(target||'');if(!substituteModeActive())return false;if(afternoonSubstituteActive()&&afternoonDestination(id))return false;return ['kingdom','deep-time-lab','dragon-tongues','arcade','boss','boss-battle'].includes(id)}
+function moduleAllowed(id){if(HOME_EDITION&&!HOME_ALLOWED_MODULES.has(String(id||'')))return{ok:false,reason:'not-home'};return moduleHost?.allowed(id,{dailyAccessUnlocked:afternoonSubstituteEligible()&&AFTERNOON_GAME_MODULES.has(String(id||''))?true:state.dailyAccessUnlocked})}
 function weekendAcademicOpen(target){return window.DWV33Core?.isWeekendDateKey?.(effectiveDateKey())===true&&['rune-spelling','dragon-tongues','curriculum-quest'].includes(String(target||''))}
 window.DWV33TesterDateContext=()=>Object.freeze({dateKey:effectiveDateKey(),simulated:state.isTester&&Boolean(state.simulatedDate),isTester:state.isTester,testerUnlocks:Object.freeze({...state.testerUnlocks})});
 function curriculumTesterPreview(){
@@ -227,11 +225,13 @@ function ensureCombinedGameStyles(){
 
 function recoverySummaryCurrent(){const summary=state.recoverySummary||{},age=Date.now()-Number(summary.checkedAt||0);return summary.checked===true&&summary.dateKey===state.missionDate&&(state.completedMissions.has('curriculum')||age>=0&&age<5000)}
 function ensureRecoveryProbe(){
+  if(HOME_EDITION)return;
   if(recoverySummaryCurrent()||recoveryProbe||requestedModuleId()==='curriculum-quest'||!moduleHost?.href)return;
   const frame=document.createElement('iframe');frame.id='v33-recovery-progress-probe';frame.title='Recovery progress check';frame.tabIndex=-1;frame.setAttribute('aria-hidden','true');frame.setAttribute('style','position:fixed;width:1px;height:1px;left:-10000px;top:-10000px;border:0;opacity:0;pointer-events:none');frame.src=moduleHost.href('curriculum-quest',document.baseURI,window.DWV33Integration?.environment);document.body?.appendChild(frame);recoveryProbe=frame;
 }
 function unfinishedRequiredWork(target='activity'){
   const rows=[];
+  if(HOME_EDITION)return rows;
   const destination=String(target||'activity');
   if(weekendAcademicOpen(destination))return rows;
   if(afternoonSubstituteActive()&&afternoonDestination(destination)){
@@ -260,8 +260,9 @@ function unfinishedRequiredWork(target='activity'){
   if(String(target)==='kingdom'&&state.kingdomAccessUnlocked!==true)rows.push({id:'kingdom-access',icon:'🔒',title:'Kingdom Wars teacher unlock',detail:'Your teacher has not opened Kingdom Wars today.',route:'missions'});
   return rows;
 }
-function requiredWorkLocked(page){const target=String(page||'');if(target==='arcade'&&state.testerUnlocks.unlockArcade===true)return false;if(target==='kingdom'&&state.testerUnlocks.unlockKingdom===true)return false;if(target==='boss'&&state.testerUnlocks.unlockBoss===true)return false;return REQUIRED_WORK_PAGES.has(target)&&unfinishedRequiredWork(target).length>0}
+function requiredWorkLocked(page){if(HOME_EDITION)return false;const target=String(page||'');if(target==='arcade'&&state.testerUnlocks.unlockArcade===true)return false;if(target==='kingdom'&&state.testerUnlocks.unlockKingdom===true)return false;if(target==='boss'&&state.testerUnlocks.unlockBoss===true)return false;return REQUIRED_WORK_PAGES.has(target)&&unfinishedRequiredWork(target).length>0}
 function modulePathLocked(id){
+  if(HOME_EDITION)return false;
   const moduleId=String(id||'');
   if(afternoonSubstituteActive()&&AFTERNOON_GAME_MODULES.has(moduleId))return !afternoonSubstituteEligible();
   if(moduleId==='boss-battle'&&state.testerUnlocks.unlockBoss===true)return false;
@@ -327,7 +328,7 @@ function syncPassSafety(){
   if(banner){banner.classList.toggle('active',!!overdue&&!blocking);if(overdue&&!blocking){const timing=passTiming(overdue);banner.querySelector('[data-pass-overdue-title]').textContent=`⏰ ${overdue.label.toUpperCase()} PASS OVERDUE`;banner.querySelector('[data-pass-overdue-copy]').textContent=`You are ${formatPassDuration(timing.overdueMs)} overdue. Please return your pass now.`;banner.querySelector('[data-return-active-pass]').dataset.returnActivePass=overdue.type}}
   for(const row of active){const timing=passTiming(row);if(!timing.overdue)continue;const key=`${row.type}:${row.startedMs}`;if(passAlertBuckets.get(key)===timing.alertBucket)continue;passAlertBuckets.set(key,timing.alertBucket);passReminder(`Your ${row.label} pass is overdue. Please return your pass and check back in now.`)}
 }
-function startPassSafetyEngine(){clearInterval(passSafetyInterval);passSafetyInterval=null;syncPassSafety();if(activePassRows().length)passSafetyInterval=setInterval(syncPassSafety,1000)}
+function startPassSafetyEngine(){if(HOME_EDITION)return;clearInterval(passSafetyInterval);passSafetyInterval=null;syncPassSafety();if(activePassRows().length)passSafetyInterval=setInterval(syncPassSafety,1000)}
 async function returnActivePass(button){const type=button?.dataset?.returnActivePass;if(!type)return;button.disabled=true;button.textContent='Closing your pass…';try{await integrationController?.usePass(type);showToast('Pass returned. Welcome back.')}catch(err){button.disabled=false;button.textContent='✅ I AM BACK — RETURN PASS';showToast(err?.message||'The pass ledger could not be updated. Try again.')}}
 
 function teacherAttentionMarkup(){
@@ -357,6 +358,7 @@ function currentPage(){
   if(moduleId){
     if(substituteBlocked(moduleId)){pendingSubstituteNotice=moduleId;return 'missions'}
     const gate=moduleAllowed(moduleId);
+    if(gate?.reason==='not-home'){globalThis.history?.replaceState?.(null,'','#adventure');return'adventure'}
     if(!gate.ok||modulePathLocked(moduleId)){pendingRequiredWorkNotice=moduleId;return 'missions'}
     return moduleHost.definition(moduleId).returnPage;
   }
@@ -372,21 +374,10 @@ function currentModuleId(){
 }
 
 function navMarkup(){
-  const kingdomExtras=kingdomPortal?[kingdomNav]:[],freeExtras=arcadePortal?[arcadeNav]:[];
   return `
-    <div class="nav-group-title">Explore</div>
-    <nav class="portal-nav" aria-label="Student portal">
-      ${navItems.slice(0,5).map(navButton).join('')}
-    </nav>
-    <div class="nav-group-title">Dragonswood</div>
-    <nav class="portal-nav" aria-label="Dragonswood features">
-      ${navItems.slice(5).map(navButton).join('')}
-    </nav>${kingdomExtras.length?`\n    <div class="nav-group-title">Kingdom</div><nav class="portal-nav" aria-label="Kingdom features">${kingdomExtras.map(navButton).join('')}</nav>`:''}${freeExtras.length?`\n    <div class="nav-group-title">Free Time</div><nav class="portal-nav" aria-label="Free-time features">${freeExtras.map(navButton).join('')}</nav>`:''}
-    <div class="streak-card">
-      <div class="streak-top"><span class="streak-flame">🔥</span><div><b>${state.streak} day streak!</b><small>Keep it going</small></div></div>
-      <div class="row between mt-12"><small>Weekly goal</small><small>70%</small></div>
-      <progress class="dw-progress dw-progress-mini streak-progress" max="100" value="70" aria-label="Weekly goal progress">70%</progress>
-    </div>
+    <div class="nav-group-title">My Dragonswood</div>
+    <nav class="portal-nav" aria-label="Family learning portal">${navItems.map(navButton).join('')}</nav>
+    <div class="streak-card"><div class="streak-top"><span class="streak-flame">🌿</span><div><b>Go at your pace</b><small>Breaks and retries are always okay.</small></div></div></div>
     <button class="signout" type="button" data-signout>↪ Sign out</button>`;
 }
 function navButton(item){
@@ -401,12 +392,12 @@ function shell(){
   ensureCombinedGameStyles();
   return `<div class="portal student-shell student-page-${state.page}" data-${IS_PRODUCTION?'release':'tester-build'}="v3.3">
     <header class="student-topbar"><div class="student-brand">
-      <div class="brand-lockup"><img class="student-crest" src="assets/branding/dragonswood-mascot-crest.png" alt="Dragonswood mascot crest"><div><div class="brand-name">DRAGONSWOOD</div><div class="brand-sub">STUDENT ADVENTURE PORTAL</div></div></div>
-      <div class="student-utility">${state.isTester?'<button class="btn btn-secondary btn-sm" type="button" data-tester-controls>🧪 <span>Tester Controls</span></button>':''}<button class="btn btn-secondary btn-sm" type="button" data-passes>🎟️ <span>${substituteModeActive()?'Ask sub for pass':'Passes'}</span></button><div class="profile-pill" role="button" tabindex="0" data-account-menu aria-label="Open account menu"><div class="profile-orb">${escapeHtml(state.initial)}</div><span><b>${escapeHtml(state.firstName)}</b><small>Level ${state.level}</small></span></div></div>
+      <div class="brand-lockup"><img class="student-crest" src="assets/branding/dragonswood-mascot-crest.png" alt="Dragonswood mascot crest"><div><div class="brand-name">DRAGONSWOOD HOME</div><div class="brand-sub">FAMILY LEARNING PORTAL</div></div></div>
+      <div class="student-utility"><div class="profile-pill" role="button" tabindex="0" data-account-menu aria-label="Open account menu"><div class="profile-orb">${escapeHtml(state.initial)}</div><span><b>${escapeHtml(state.firstName)}</b><small>Level ${state.level}</small></span></div></div>
       </div></header>
     <aside class="student-sidebar">${navMarkup()}</aside>
-    <main class="student-main" id="page-content">${state.isTester&&state.simulatedDate?`<div class="tester-date-banner" role="status">🧪 SAFE DATE PREVIEW • real date ${escapeHtml(window.DWV33Core?.phoenixDateKey?.()||'today')} • simulated date ${escapeHtml(state.simulatedDate)} • academic and Boss preview writes are disabled <button type="button" data-return-real-date>Return to Today</button></div>`:''}<div class="student-content">${substituteModeActive()?afternoonSubstituteActive()?`<section class="substitute-student-banner" role="alert"><span>🎮</span><div><h2>Afternoon Substitute Day • 1-hour free-play window</h2><p>${afternoonSubstituteEligible()?'You finished Morning Work and today’s Curriculum Quest. Quest Games and Arcade are unlocked free—no Tokens—until the class window ends.':'Finish Morning Work and every lesson in today’s Current Quest to unlock Quest Games and Arcade free. No Tokens will be used.'} Passes and restricted areas remain closed.</p></div></section>`:'<section class="substitute-student-banner" role="alert"><span>🛑</span><div><h2>Substitute Mode is on today</h2><p>Passes, Kingdom Wars, Deep Time Lab, Dragon Tongues, Arcade, and Boss Battle are unavailable. If you need help or need to leave the room, ask your substitute teacher.</p></div></section>':''}${pageMarkup()}</div></main>
-    ${passSafetyMarkup()}${teacherAttentionMarkup()}${referenceButton()}${IS_PRODUCTION?'':'<div class="tester-ribbon">V3.3 TESTER • LOCAL ONLY</div>'}
+    <main class="student-main" id="page-content"><div class="student-content">${pageMarkup()}</div></main>
+    ${referenceButton()}${IS_PRODUCTION?'':'<div class="tester-ribbon">HOME PREVIEW</div>'}
   </div>`;
 }
 
@@ -414,7 +405,7 @@ function referenceButton(){
   return new URLSearchParams(location.search).get('reference')==='1' ? `<button type="button" class="btn btn-gold btn-sm reference-button" data-reference>Reference</button>` : '';
 }
 
-function welcome(){return `<div class="welcome-strip"><div>✦ &nbsp;<b>Good morning, ${escapeHtml(state.firstName)}!</b> &nbsp;<span>Your next win is ready.</span></div></div>`}
+function welcome(){return `<div class="welcome-strip"><div>✦ &nbsp;<b>Hi, ${escapeHtml(state.firstName)}!</b> &nbsp;<span>You can learn one small step at a time.</span></div></div>`}
 function studentTitle(icon,eyebrow,title,sub){const mascot=titleIcons[state.page];return `<div class="student-page-title"><div class="title-icon">${mascot?`<img src="${mascot.src}" alt="${mascot.alt}">`:icon}</div><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1><p>${sub}</p></div></div>`}
 function questCard(icon,kicker,title,count,pct,copy){return `<article class="panel quest-card"><div class="quest-top"><span class="text-26">${icon}</span><span class="big-count">${count}</span></div><div class="eyebrow">${kicker}</div><h3>${title}</h3><p>${copy}</p><progress class="dw-progress" max="100" value="${pct}" aria-label="${title} progress">${pct}%</progress></article>`}
 
@@ -437,7 +428,7 @@ function pageMarkup(){
 
 function adventurePage(){
   const pct=state.xpPct,identity=canonicalAdventureIdentity(),badge=getLevelBadgeAsset(state.level);
-  return `${welcome()}${studentTitle('🛡️','My Adventure','Ready for today’s quest?','Start with your mission, then choose how you want to explore Dragonswood.')}
+  return `${welcome()}${studentTitle('🛡️','MY HOME','What would you like to do?','Start with your learning path, take a break when you need one, and come back when you are ready.')}
   <section class="adventure-grid">
     <article class="panel adventurer-card">
       <div class="adventurer-art live-adventurer-stage" style="--adventure-background:url('${escapeHtml(identity.backgroundArt)}')">
@@ -446,22 +437,26 @@ function adventurePage(){
       </div>
       <div class="adventurer-info">
         <div class="adventurer-profile-heading">
-          <div class="adventurer-profile-copy"><span class="rarity-chip">✦ EPIC ADVENTURER</span><h2>${escapeHtml(state.displayName)}</h2><p>Grade ${escapeHtml(state.grade)} • ${escapeHtml(state.characterClass)} Class</p></div>
+          <div class="adventurer-profile-copy"><span class="rarity-chip">✦ HOME ADVENTURER</span><h2>${escapeHtml(state.displayName)}</h2><p>Your learning path can be different for every subject.</p></div>
           <div class="live-adventurer-level" role="img" aria-label="${badge.alt}"><img src="${badge.src}" width="112" height="112" alt=""><span><small>LEVEL</small><strong>${badge.displayLevel}</strong></span></div>
         </div>
-        <div class="stat-row"><div class="stat-box"><strong>❤️ ${state.hp}</strong><small>HP</small></div><div class="stat-box"><strong>🪙 ${state.gold}</strong><small>Gold</small></div><div class="stat-box"><strong>🔥 ${state.streak}</strong><small>Streak</small></div></div>
+        <div class="stat-row"><div class="stat-box"><strong>⭐ ${state.level}</strong><small>Level</small></div><div class="stat-box"><strong>🪙 ${state.gold}</strong><small>Gold</small></div><div class="stat-box"><strong>✨ ${state.xp}</strong><small>XP earned</small></div></div>
         <div class="xp-labels"><span>${state.xp.toLocaleString()} / ${state.xpMax.toLocaleString()} XP</span><span>${pct}%</span></div><progress class="dw-progress" max="100" value="${pct}" aria-label="Experience progress">${pct}%</progress>
         <button class="btn btn-secondary w-full" type="button" data-page="hall">⚔️ Open my character</button>
       </div>
     </article>
     <article class="panel next-step">
-      <div class="eyebrow">⭐ Your next step</div><div class="next-reward">+6 XP</div><div class="next-icon">📜</div><h2>Morning Work</h2><p>Practice yesterday’s learning, older review, personal support, and a small challenge. Visual Coach help is available.</p>
-      <div class="step-pills"><div class="step-pill done">✓ Log in</div><div class="step-pill current">2 Start Morning Work</div><div class="step-pill">3 Continue your path</div></div>
-      <button class="btn btn-primary w-full" type="button" data-page="missions">Start today’s mission →</button><p class="center muted mt-12 text-11">About 25 minutes • You can use read-aloud</p>
+           <div class="eyebrow">⭐ YOUR NEXT SMALL STEP</div><div class="next-reward">No timer</div><div class="next-icon">🐉</div><h2>Open Today’s Path</h2><p>Choose Math, Reading, Writing, or Science at your own learning level. Every lesson follows the same three steps.</p>
+      <div class="step-pills"><div class="step-pill current">1 Learn</div><div class="step-pill">2 Try</div><div class="step-pill">3 Show</div></div>
+      <button class="btn btn-primary w-full" type="button" data-page="missions">Open today’s path →</button><p class="center muted mt-12 text-11">Read-aloud available • Breaks are always okay</p>
     </article>
   </section>
-  <div class="section-heading"><div><div class="eyebrow">🏰 Teamwork</div><h2>Our class quests</h2></div><span class="muted text-11">Every point helps the whole guild.</span></div>
-  <section class="quest-cards">${(state.classGoals?.rows||[{icon:'🌤️',title:'Second Recess',points:8,goal:10,pct:80},{icon:'🐾',title:'Class Pet',points:72,goal:100,pct:72},{icon:'🚌',title:'Field Trip',points:164,goal:250,pct:66}]).map(goal=>questCard(goal.icon,'Live class goal',goal.title,`${goal.points} / ${goal.goal}`,goal.pct,`${Math.max(0,goal.goal-goal.points)} points remaining • synced live`)).join('')}</section>`;
+  <div class="section-heading"><div><div class="eyebrow">🌿 CHOOSE WHAT HELPS</div><h2>Your spaces</h2></div><span class="muted text-11">There is no ranking and nothing is lost for a wrong answer.</span></div>
+  <section class="quest-cards">
+    <article class="panel quest-card"><div class="quest-top"><span class="text-26">🐉</span></div><div class="eyebrow">PERSONAL LEVELS</div><h3>Learning Paths</h3><p>Short K–4 lessons chosen separately for each subject.</p><button class="btn btn-primary w-full" type="button" data-module="curriculum-quest">Start learning →</button></article>
+    <article class="panel quest-card"><div class="quest-top"><span class="text-26">📚</span></div><div class="eyebrow">READ AT YOUR PACE</div><h3>Reading Path</h3><p>Practice sounds, stories, meaning, and evidence at your own reading level.</p><button class="btn btn-secondary w-full" type="button" data-module="curriculum-quest">Choose Reading →</button></article>
+    <article class="panel quest-card"><div class="quest-top"><span class="text-26">✍️</span></div><div class="eyebrow">YOUR IDEAS</div><h3>Create & Write</h3><p>Write, draw, plan, or tell a story without a timer.</p><button class="btn btn-secondary w-full" type="button" data-page="scribe">Create something →</button></article>
+  </section>`;
 }
 
 function getLevelBadgeAsset(level){
@@ -486,65 +481,39 @@ function mountAdventureIdentity(){
 }
 
 const missions = [
-  {id:'morning',module:'daily-quest',n:'1',kicker:'DO THIS FIRST',icon:'🌅',title:'Morning Work',desc:'30 questions: mostly yesterday, then older review, personal support, and a small challenge.',time:'≈25 min',reward:'+6 XP',button:'Start Morning Work →'},
-  {id:'spelling',module:'rune-spelling',n:'2',kicker:'SPELLING PRACTICE',icon:'🔤',title:'Rune Spelling',desc:'Study and practice today’s teacher-assigned spelling words.',time:'10–15 min',reward:'Spelling grade',button:'Open spelling →'},
-  {id:'curriculum',module:'curriculum-quest',n:'3',kicker:'CLASS MISSION',icon:'🐉',title:'Curriculum Quest',desc:'Watch the short lesson, try it, then ask for teacher verification.',time:'10–15 min',reward:'+50 XP',button:'Open quest →'}
+  {module:'curriculum-quest',n:'1',kicker:'START HERE',icon:'🐉',title:'Learning Paths',desc:'Pick Math, Reading, Writing, or Science. Each subject uses the learning level your grown-up chose.',note:'Learn • Try • Show',button:'Choose a subject →',primary:true},
+  {module:'curriculum-quest',n:'2',kicker:'READING CHOICE',icon:'📚',title:'Reading Path',desc:'Open Learning Paths and choose Reading for a lesson matched to your reading level.',note:'Read at your pace',button:'Choose Reading →'},
+  {page:'scribe',n:'3',kicker:'CREATIVE CHOICE',icon:'✍️',title:'Create & Write',desc:'Write a sentence, a story, a list, or an idea. There is no timer and no minimum.',note:'Your ideas count',button:'Start creating →'},
+  {page:'games',n:'4',kicker:'PRACTICE CHOICE',icon:'🎮',title:'Skill Games',desc:'Practice a skill through a game. Ask a grown-up if a game feels too easy or too hard.',note:'Optional practice',button:'Choose a game →'}
 ];
 function missionsPage(){
-  const completeCount=missions.filter(m=>state.completedMissions.has(m.id)).length;
-  const optionalOpen=unfinishedRequiredWork('games').length===0;
-  const accessSummary=optionalOpen
-    ?afternoonSubstituteActive()?afternoonSubstituteEligible()?'Morning Work and Current Quest are complete. Quest Games and Arcade are free during the one-hour window.':'Finish Morning Work and today’s Current Quest for free games and Arcade.':substituteModeActive()?'Dragon’s Path is complete. Substitute Mode keeps passes and five optional activities closed today.':'Dragon’s Path is complete. Dragon Tongues, games, Scribe Arena, Boss Battle, Kingdom Wars, and Arcade are available.'
-    :state.testerUnlocks.unlockMorning===true
-      ?'Tester access is active. Required work remains incomplete until you do it.'
-      :'Complete Morning Work, Rune Spelling, and Curriculum Quest to open free-choice adventures.';
-  const accessLabel=state.dailyAccessOverride===true?'🔓 Teacher override':state.testerUnlocks.unlockMorning===true?'🧪 Tester access':optionalOpen?'🔓 Adventures open':'🔒 Path in progress';
-  const readingRows=state.reading?.rows||[],today=window.DWV33Core?.phoenixDateKey?.()||'',readingRow=readingRows.find(row=>row.dateKey===today)||readingRows.slice().sort((a,b)=>String(b.dateKey).localeCompare(String(a.dateKey)))[0],readingMinutes=readingRow?Math.round(readingRow.activeSeconds/6)/10:0,readingTarget=state.reading?.targetMinutes||20,readingAssigned=(state.reading?.assignedDateKeys||[]).includes(today);
-  const languageSubstituteLocked=substituteBlocked('dragon-tongues'),languageLocked=languageSubstituteLocked||!(optionalOpen||weekendAcademicOpen('dragon-tongues')||state.testerUnlocks.unlockMorning===true);
-  return `${studentTitle('📜','DRAGON’S PATH','Your quest path','Complete each glowing step. Free-choice adventures unlock when your required path is finished.')}
-    <div class="panel path-summary"><div class="path-count"><strong>${completeCount}</strong><small>of 3</small></div><div class="path-copy"><div class="eyebrow">TODAY’S PROGRESS</div><b>One mission at a time.</b><div>${accessSummary}</div></div><div class="path-lock">${accessLabel}</div></div>
-    <div class="mission-list">${missions.map((m,i)=>missionRow(m,i)).join('')}</div>
-    <div class="mission-list mt-12"><article class="panel mission-row ${languageLocked?'locked':'current'}"><div class="mission-num">✦</div><div class="mission-art">🗣️</div><div><div class="eyebrow">${languageSubstituteLocked?'SUBSTITUTE MODE':'OPTIONAL LANGUAGE PATH'}</div><h3>Dragon Tongues</h3><p>${languageSubstituteLocked?'Unavailable today. Ask your substitute teacher if you need help.':'Choose a language and learn freely at your own pace after Curriculum Quest.'}</p><div class="reward-line"><span>🌍 12 languages</span><span>${languageSubstituteLocked?'🛑 Closed today':'🐉 Free path'}</span></div></div><button class="btn ${languageLocked?'btn-secondary':'btn-primary'} btn-sm" type="button" data-module="dragon-tongues" ${languageLocked?'disabled':''}>${languageSubstituteLocked?'Unavailable today':'Explore languages →'}</button></article></div>
-    <div class="mission-extra"><article class="panel extra-card"><div class="extra-icon">📚</div><div><div class="extra-kicker">${readingAssigned?'STORYVAULT READING ASSIGNED':'DRAGONSWOOD STORYVAULT'}</div><h3>Dragonswood Storyvault</h3><p>${readingAssigned?`${readingMinutes}/${readingTarget} verified active Storyvault minutes${readingRow?.lastPage?` • last page ${readingRow.lastPage}`:''}.`:'Choose a book and continue from your saved page.'}</p></div><button class="btn btn-secondary btn-sm" data-module="class-reader">${readingAssigned&&readingMinutes<readingTarget?'Open Storyvault':'Browse books'}</button></article><article class="panel extra-card"><div class="extra-icon">⭐</div><div><div class="extra-kicker">BONUS CHALLENGE</div><h3>Level-Up Mission</h3><p>Ready for more? Try a mission one level above.</p></div><button class="btn btn-secondary btn-sm" data-module="level-up-challenge">Try the challenge</button></article></div>`;
+  return `${studentTitle('📜','TODAY’S PATH','Choose one small step','Everything is open. Start with Learning Paths, or choose the space that helps your brain learn today.')}
+    <div class="panel path-summary"><div class="path-count"><strong>4</strong><small>choices</small></div><div class="path-copy"><div class="eyebrow">CALM HOME LEARNING</div><b>No locks. No countdown. No sibling ranking.</b><div>You may ask for help, take a break, and try again.</div></div><div class="path-lock">🌿 Your pace</div></div>
+    <div class="mission-list">${missions.map(m=>missionRow(m)).join('')}</div>`;
 }
-function missionRow(m,i){
-  const done=state.completedMissions.has(m.id);
-  const testerUnlocked=(m.id==='spelling'&&state.testerUnlocks.unlockMorning===true)||(m.id==='curriculum'&&state.curriculumAccessUnlocked===true);
-  const weekendUnlocked=(m.id==='spelling'||m.id==='curriculum')&&weekendAcademicOpen(m.module);
-  const previousDone=i===0||state.completedMissions.has(missions[i-1].id)||state.dailyAccessOverride===true||testerUnlocked||weekendUnlocked;
-  const current=!done&&previousDone;
-  const locked=!done&&!previousDone;
-  return `<article class="panel mission-row ${done?'complete':''} ${current?'current':''} ${locked?'locked':''}"><div class="mission-num">${done?'✓':m.n}</div><div class="mission-art">${m.icon}</div><div><div class="eyebrow">${done?'COMPLETE':m.kicker}</div><h3>${m.title}</h3><p>${m.desc}</p><div class="reward-line"><span>⏱ ${m.time}</span><span>✨ ${m.reward}</span></div></div><button class="btn ${current?'btn-primary':'btn-secondary'} btn-sm" type="button" data-module="${m.module}" ${locked?'disabled':''}>${done?'Review quest':m.button}</button></article>`;
+function missionRow(m){
+  const destination=m.module?`data-module="${m.module}"`:`data-page="${m.page}"`;
+  return `<article class="panel mission-row ${m.primary?'current':''}"><div class="mission-num">${m.n}</div><div class="mission-art">${m.icon}</div><div><div class="eyebrow">${m.kicker}</div><h3>${m.title}</h3><p>${m.desc}</p><div class="reward-line"><span>🌿 ${m.note}</span></div></div><button class="btn ${m.primary?'btn-primary':'btn-secondary'} btn-sm" type="button" ${destination}>${m.button}</button></article>`;
 }
 
 const games=[
-  ['decimal-deception','Math','assets/art/quest-game-cards/dragonswood-card-decimal-deception-1200x660.webp','Decimal Deception','Restore the crystal grid with decimal clues.'],
-  ['math-operations','Math','assets/art/quest-game-cards/dragonswood-card-math-operations-quest-1200x660.webp','Math Operations Quest','Practice whole-number operations or enter Fraction Forge for fraction operations.','fraction-forge'],
-  ['elemental-laboratory','Science','assets/art/quest-game-cards/dragonswood-card-elemental-laboratory-1200x660.webp','Elemental Laboratory','Build atoms and investigate matter.'],
-  ['cosmic-architect','Science','assets/art/quest-game-cards/dragonswood-card-cosmic-architect-1200x660.webp','Cosmic Architect','Build and investigate a model of the cosmos.'],
-  ['arcane-forge','Science','assets/art/quest-game-cards/dragonswood-card-arcane-forge-1200x660.webp','Arcane Forge','Use science evidence to power the forge.'],
-  ['deep-time-lab','Science','assets/art/quest-game-cards/dragonswood-card-deep-time-lab-1200x660.webp','Deep Time Lab','Investigate fossils, evidence, and all forty Deep Time cases.']
+  ['math-operations','Math','assets/art/quest-game-cards/dragonswood-card-math-operations-quest-1200x660.webp','Math Operations Quest','Practice addition, subtraction, multiplication, or division with a grown-up helping choose the right level.'],
+  ['fraction-forge','Math','assets/art/quest-game-cards/dragonswood-card-math-operations-quest-1200x660.webp','Fraction Forge','Explore fraction pieces. Best for learning levels 3–4.']
 ];
 function gamesPage(){
   const visible=state.gameFilter==='All'?games:games.filter(g=>g[1]===state.gameFilter);
-  return `${studentTitle('🎮','Quest Games','Choose your adventure','Every game practices a real school skill. Pick a subject and jump in.')}
-  <div class="filter-tabs game-filters">${['All','Math','ELA','Science'].map(f=>`<button class="filter-tab ${state.gameFilter===f?'active':''}" data-game-filter="${f}">${f==='All'?'✦ ':''}${f}</button>`).join('')}</div>
-  <section class="game-grid">${visible.map(g=>{const substituteLocked=substituteBlocked(g[0]),secondaryId=g[5],secondaryLocked=secondaryId&&substituteBlocked(secondaryId);return `<article class="panel game-card ${substituteLocked?'substitute-locked':''}"><div class="game-visual"><img src="${g[2]}" alt="${g[3]} game artwork" loading="lazy" decoding="async"></div><div class="game-copy"><div class="subject">${substituteLocked?'SUBSTITUTE MODE':`${g[1]} ADVENTURE`}</div><h3>${g[3]}</h3><p>${substituteLocked?'Unavailable today. Ask your substitute teacher if you need help.':g[4]}</p><div class="game-badges"><span class="${substituteLocked?'substitute-lock-note':''}">${substituteLocked?'🛑 Closed today':'✨ Earn XP'}</span></div><div class="game-actions ${secondaryId?'split':''}"><button class="btn ${substituteLocked?'btn-secondary':'btn-primary'}" type="button" data-module="${g[0]}" ${substituteLocked?'disabled':''}>${substituteLocked?'Unavailable today':secondaryId?'Operations →':'Play quest →'}</button>${secondaryId?`<button class="btn btn-secondary" type="button" data-module="${secondaryId}" ${secondaryLocked?'disabled':''}>${secondaryLocked?'Unavailable today':'Fraction Forge →'}</button>`:''}</div></div></article>`}).join('')}</section>`;
+  return `${studentTitle('🎮','SKILL GAMES','Play and practice','Games are optional. Stop, switch, or ask for help whenever you need to.')}
+  <div class="filter-tabs game-filters">${['All','Math'].map(f=>`<button class="filter-tab ${state.gameFilter===f?'active':''}" data-game-filter="${f}">${f==='All'?'✦ ':''}${f}</button>`).join('')}</div>
+  <section class="game-grid">${visible.map(g=>`<article class="panel game-card"><div class="game-visual"><img src="${g[2]}" alt="${g[3]} artwork" loading="lazy" decoding="async"></div><div class="game-copy"><div class="subject">${g[1]} PRACTICE</div><h3>${g[3]}</h3><p>${g[4]}</p><div class="game-badges"><span>🌿 Play at your pace</span></div><div class="game-actions"><button class="btn btn-primary" type="button" data-module="${g[0]}">Open game →</button></div></div></article>`).join('')}</section>`;
 }
 
 function wordCount(text){return text.trim()?text.trim().split(/\s+/).length:0}
 function scribePage(){
   const wc=wordCount(state.writing);
-  const connected=state.academicConnected,session=state.scribeSession;
-  const title=connected?(session?.title||'No active writing mission'):'A door appears in the oldest tree…';
-  const prompt=connected?(session?.prompt||'Your teacher has not opened a writing mission yet.'):'You find a tiny golden key under your desk. At recess, it begins to glow and points toward the oldest tree in Dragonswood. What happens next?';
-  const hints=session?.hints?.length?session.hints:['Show, don’t tell','Add one sensory detail','Use complete sentences'];
-  const portfolio=state.scribePortfolio||{count:12,average:16.8,growth:3};
-  const submitted=state.scribeResponse?.status==='submitted';
-  const feedback=state.scribeResponse?.teacherFeedback||state.scribeResponse?.aiFeedback?.feedback||state.scribeResponse?.aiFeedback?.nextStep||'';
-  return `${studentTitle('✍️','Scribe Arena','Turn your ideas into magic','Write freely. Your work saves as you type, and feedback helps you grow.')}
-  <section class="scribe-layout"><div><article class="panel scribe-main-card"><div class="mission-prompt"><span class="rarity-chip">${session||!connected?'🔥 ACTIVE WRITING MISSION':'○ WAITING FOR TEACHER'}</span><h3>${escapeHtml(title)}</h3><div class="prompt-box">${escapeHtml(prompt)}</div><div class="prompt-tags">${hints.slice(0,3).map((hint,index)=>`<span>${['💡','👀','▣'][index]||'✦'} ${escapeHtml(hint)}</span>`).join('')}</div></div><div class="writing-area"><textarea id="scribe-text" aria-label="Your writing" placeholder="Start your story here…" ${connected&&!session?'disabled':''}>${escapeHtml(state.writing)}</textarea><div class="writing-meta"><span>☁ ${submitted?'Submitted':'Saved just now'}</span><span>${wc} words</span><span>⏱ ${session?session.timeMinutes+':00':'—'}</span></div><div class="row"><button class="btn btn-primary" data-submit-writing ${submitted||!session&&connected||wc<(session?.minWords||5)?'disabled':''}>${submitted?'✓ Submitted':'📜 Submit quickwrite'}</button><button class="btn btn-secondary" data-writing-hint>✨ Get a writing hint</button></div></div></article></div><aside class="panel coach-card"><img class="official-mascot-art" src="assets/mascot/actions/scribe.webp" alt="Dragonswood dragon helping with writing"><div class="eyebrow center">DRAGONSWOOD WRITING COACH</div><h3>${feedback?'Your feedback is ready.':'Your ideas belong here.'}</h3><p>${escapeHtml(feedback||`Write at least ${session?.minWords||5} words and submit when you’re ready. Your teacher feedback will appear here after review.`)}</p><button class="btn btn-secondary w-full" ${feedback?'data-open-portfolio':'data-writing-hint'}>${feedback?'📚 Open reviewed writing':'✨ Get a writing hint'}</button></aside></section>
-  <div class="panel portfolio-strip"><div class="portfolio-title"><span>📚</span><div><div class="eyebrow">MY WRITING PORTFOLIO</div><b>Your writing is growing</b></div></div><div class="portfolio-stats"><div class="portfolio-stat"><strong>${portfolio.count}</strong><small>Quickwrites</small></div><div class="portfolio-stat"><strong>${portfolio.average??'—'}</strong><small>Average score</small></div><div class="portfolio-stat"><strong>${Number(portfolio.growth)>=0?'+':''}${portfolio.growth??0}</strong><small>Points grown</small></div></div><button class="btn btn-secondary btn-sm" data-open-portfolio>Open portfolio →</button></div>`;
+  const prompt='Imagine you discover a tiny door in a tree. What is behind it? You may write a sentence, a list, or a whole story.';
+  const hints=['Who is there?','What do you see, hear, or feel?','What happens next?'];
+  return `${studentTitle('✍️','CREATE & WRITE','Your ideas belong here','Write as much or as little as you want. Spelling does not have to be perfect on the first try.')}
+  <section class="scribe-layout"><div><article class="panel scribe-main-card"><div class="mission-prompt"><span class="rarity-chip">🌿 NO TIMER</span><h3>A tiny door in the oldest tree…</h3><div class="prompt-box">${escapeHtml(prompt)}</div><div class="prompt-tags">${hints.map((hint,index)=>`<span>${['💡','👀','➡️'][index]} ${escapeHtml(hint)}</span>`).join('')}</div></div><div class="writing-area"><textarea id="scribe-text" aria-label="Your writing" placeholder="Start with one word, one sentence, or your whole story…">${escapeHtml(state.writing)}</textarea><div class="writing-meta"><span>☁ Saved on this device</span><span>${wc} word${wc===1?'':'s'}</span><span>🌿 Take a break anytime</span></div><div class="row"><button class="btn btn-secondary" data-writing-hint>✨ Give me one idea</button></div></div></article></div><aside class="panel coach-card"><img class="official-mascot-art" src="assets/mascot/actions/scribe.webp" alt="Friendly Dragonswood dragon helping with writing"><div class="eyebrow center">FRIENDLY WRITING HELPER</div><h3>There is no wrong length.</h3><p>You can plan, make a list, write a sentence, or tell a full story. Ask a grown-up to type for you if that helps.</p><button class="btn btn-secondary w-full" data-writing-hint>✨ Give me one idea</button></aside></section>`;
 }
 
 function dayPage(){
@@ -598,8 +567,7 @@ async function signOutStudent(button=null){
   try{state.simulatedDate='';sessionSet(SIMULATED_DATE_KEY,'');await integrationController?.signOut();closeDialog()}catch(err){if(button)button.disabled=false;console.warn('[Dragonswood sign-out]',err);showToast('Dragonswood could not sign you out. Try again.')}
 }
 function accountDialog(){
-  openDialog('Leave Dragonswood?',`<div class="pass-student"><span class="roster-avatar">${escapeHtml(state.initial)}</span><div><b>${escapeHtml(state.displayName||state.firstName)}</b><p>Level ${state.level} • Grade ${escapeHtml(state.grade)}</p></div></div><p class="muted mt-12">Sign out only when you need to switch school accounts.</p>`,`<button class="btn btn-secondary" type="button" data-suggest-improvement>💡 Suggest an Improvement</button><button class="btn btn-secondary" type="button" data-close-dialog>Stay</button><button class="btn btn-danger" type="button" data-account-signout>↪ Sign Out</button>`);
-  dialogRoot.querySelector('[data-suggest-improvement]')?.addEventListener('click',()=>{closeDialog();window.dispatchEvent(new Event('dragonswood:open-suggestion'))});
+  openDialog('Leave Dragonswood?',`<div class="pass-student"><span class="roster-avatar">${escapeHtml(state.initial)}</span><div><b>${escapeHtml(state.displayName||state.firstName)}</b><p>Home adventurer • Level ${state.level}</p></div></div><p class="muted mt-12">Sign out only when you need to switch family profiles.</p>`,`<button class="btn btn-secondary" type="button" data-close-dialog>Stay</button><button class="btn btn-danger" type="button" data-account-signout>↪ Sign Out</button>`);
   dialogRoot.querySelector('[data-account-signout]')?.addEventListener('click',e=>signOutStudent(e.currentTarget));
 }
 
@@ -875,6 +843,7 @@ function currentSpellingWeek(){
 function spellingLevelKey(grade=state.spellingGrade){return ({3:'foundation',4:'grade4',5:'grade5',6:'challenge',7:'master',8:'master'})[Number(grade)]||'grade5'}
 function legacySpellingStorageId(value){return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_-]+/g,'-').replace(/^-+|-+$/g,'')||'local'}
 async function recoverLegacySpellingOutbox(){
+  if(HOME_EDITION)return 0;
   const uid=String(integrationSession.user?.uid||'').trim();
   if(integrationSession.status!=='authorized'||!uid||!integrationController?.reportSpellingMission)return;
   if(legacySpellingRecoveryPromise)return legacySpellingRecoveryPromise;
@@ -990,6 +959,7 @@ function openModule(id){
   if(blockingPass()){showToast('Return your active pass before opening another activity.');location.hash='adventure';return}
   if(substituteBlocked(id)){location.hash='missions';showSubstituteModeDialog(id);return}
   const gate=moduleAllowed(id);
+  if(gate?.reason==='not-home'){location.hash='adventure';return}
   if(!gate?.ok||modulePathLocked(id)){location.hash='missions';showRequiredWorkDialog(id);return}
   location.hash=`module/${encodeURIComponent(id)}`;
 }

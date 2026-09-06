@@ -14,13 +14,21 @@ function createHomeVisualAuth({onCall,HttpsError,admin,db,FieldValue,Timestamp,t
     if(!allowed.includes(id))throw new HttpsError("invalid-argument",`Choose a valid ${label}.`);
     return id;
   };
+  const learningLevel=value=>Math.max(0,Math.min(4,Math.floor(Number(value)||0)));
 
-  const listHomeVisualProfiles=onCall({region:"us-central1",timeoutSeconds:10,memory:"256MiB",maxInstances:10},async()=>{
+  const listHomeVisualProfiles=onCall({region:"us-central1",timeoutSeconds:10,memory:"256MiB",maxInstances:10},async request=>{
     const snapshot=await visualCollection.get();
-    const profiles=snapshot.docs
-      .filter(doc=>doc.data()?.active===true)
-      .map(doc=>Core.publicProfile(doc.id,doc.data()))
-      .sort((a,b)=>a.sortOrder-b.sortOrder||a.nickname.localeCompare(b.nickname));
+    const activeDocs=snapshot.docs.filter(doc=>doc.data()?.active===true);
+    const profiles=activeDocs.map(doc=>Core.publicProfile(doc.id,doc.data()));
+    const isParent=String(request.auth?.token?.email||"").trim().toLowerCase()===teacher;
+    if(isParent){
+      const studentSnapshots=await Promise.all(activeDocs.map(row=>db.doc(`students/${String(row.data()?.uid||"")}`).get()));
+      studentSnapshots.forEach((studentSnapshot,index)=>{
+        const data=studentSnapshot.exists?studentSnapshot.data():{},grade=Math.max(0,Math.min(4,Math.floor(Number(data.grade)||0)));
+        profiles[index]={...profiles[index],grade,learningLevels:{math:Math.max(0,Math.min(4,Math.floor(Number(data.learningLevels?.math??grade)))),reading:Math.max(0,Math.min(4,Math.floor(Number(data.learningLevels?.reading??grade)))),writing:Math.max(0,Math.min(4,Math.floor(Number(data.learningLevels?.writing??grade)))),science:Math.max(0,Math.min(4,Math.floor(Number(data.learningLevels?.science??grade))))},supportPreferences:{calmMode:data.supportPreferences?.calmMode!==false,readAloud:data.supportPreferences?.readAloud!==false}};
+      });
+    }
+    profiles.sort((a,b)=>a.sortOrder-b.sortOrder||a.nickname.localeCompare(b.nickname));
     return {profiles};
   });
 
@@ -59,14 +67,16 @@ function createHomeVisualAuth({onCall,HttpsError,admin,db,FieldValue,Timestamp,t
     const nickname=String(input.nickname||"").trim().replace(/\s+/g," ").slice(0,24);
     if(!nickname)throw new HttpsError("invalid-argument","Enter the child's preferred display name.");
     const avatarId=validChoice(input.avatarId,Core.AVATAR_IDS,"profile picture"),colorId=validChoice(input.colorId,Core.COLOR_IDS,"color"),animalId=validChoice(input.animalId,Core.ANIMAL_IDS,"animal");
-    const grade=Math.max(0,Math.min(4,Math.floor(Number(input.grade)||0))),sortOrder=Math.max(0,Math.min(99,Math.floor(Number(input.sortOrder)||0)));
+    const grade=learningLevel(input.grade),sortOrder=Math.max(0,Math.min(99,Math.floor(Number(input.sortOrder)||0)));
+    const learningLevels={math:learningLevel(input.learningLevels?.math??grade),reading:learningLevel(input.learningLevels?.reading??grade),writing:learningLevel(input.learningLevels?.writing??grade),science:learningLevel(input.learningLevels?.science??grade)};
+    const supportPreferences={calmMode:input.supportPreferences?.calmMode!==false,readAloud:input.supportPreferences?.readAloud!==false};
     const existing=await visualCollection.doc(profileId).get(),uid=String(existing.data()?.uid||`home-child-${profileId}`).slice(0,128);
     try{await admin.auth().getUser(uid)}catch(error){if(error?.code==="auth/user-not-found")await admin.auth().createUser({uid,displayName:nickname,disabled:false});else throw error}
     await admin.auth().updateUser(uid,{displayName:nickname,disabled:false});
     const secretSalt=Core.newSalt(),secretHash=Core.hashSecret(colorId,animalId,secretSalt),batch=db.batch();
     batch.set(visualCollection.doc(profileId),{uid,nickname,avatarId,sortOrder,active:true,secretVersion:1,secretSalt,secretHash,failedAttempts:0,lockedUntil:null,updatedBy:request.auth.uid,updatedAt:FieldValue.serverTimestamp(),createdAt:existing.exists?(existing.data().createdAt||FieldValue.serverTimestamp()):FieldValue.serverTimestamp()},{merge:false});
     batch.set(db.doc(`familyMembers/${uid}`),{role:"child",active:true,profileId,nickname,updatedBy:request.auth.uid,updatedAt:FieldValue.serverTimestamp()},{merge:true});
-    batch.set(db.doc(`students/${uid}`),{firstName:nickname,displayName:nickname,grade,learningRangeMinGrade:0,learningRangeMaxGrade:4,avatar:avatarId,updatedAt:FieldValue.serverTimestamp()},{merge:true});
+    batch.set(db.doc(`students/${uid}`),{firstName:nickname,displayName:nickname,grade,learningLevels,supportPreferences,learningRangeMinGrade:0,learningRangeMaxGrade:4,avatar:avatarId,updatedAt:FieldValue.serverTimestamp()},{merge:true});
     await batch.commit();
     return {profile:Core.publicProfile(profileId,{nickname,avatarId,sortOrder}),uid};
   });

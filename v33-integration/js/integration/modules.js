@@ -11,7 +11,7 @@
     {id:'daily-quest',title:"Today's Daily Quest",icon:'📜',path:'daily-quest.html',returnPage:'missions'},
     {id:'level-up-challenge',title:'Level-Up Challenge',icon:'⭐',path:'daily-quest.html',query:'levelup=1',returnPage:'missions'},
     {id:'rune-spelling',title:'Rune Spelling',icon:'🔤',path:'rune-spelling.html',returnPage:'missions'},
-    {id:'curriculum-quest',title:'Curriculum & Recovery Quest',icon:'🐉',path:'curriculum-quest.html',returnPage:'missions'},
+    {id:'curriculum-quest',title:'Learning Paths',icon:'🐉',path:'curriculum-quest.html',returnPage:'missions'},
     {id:'dragon-tongues',title:'Dragon Tongues',icon:'🗣️',path:'dragon-tongues/index.html',returnPage:'missions'},
     {id:'decimal-deception',title:'Decimal Deception',icon:'💎',path:'decimal-deception.html',returnPage:'games',morningGate:true},
     {id:'math-operations',title:'Math Operations Quest',icon:'➗',path:'math-operations-quest.html',returnPage:'games',morningGate:true},
@@ -52,6 +52,7 @@
     if(mod.id==='dragon-tongues'||mod.id==='deep-time-lab')url.searchParams.set('v','58.0.0');
     if(mod.id==='class-reader')url.searchParams.set('v','storyvault-2.1.0');
     const pageUrl=new URL(globalThis.location?.href||baseHref||url.href),previewDate=pageUrl.searchParams.get('previewDate'),testerDate=globalThis.DWV33TesterDateContext?.();
+    if(mod.id==='curriculum-quest'&&['localhost','127.0.0.1'].includes(pageUrl.hostname)&&pageUrl.searchParams.get('preview')==='1')url.searchParams.set('preview','1');
     if(mod.path==='daily-quest.html'&&['localhost','127.0.0.1'].includes(pageUrl.hostname)&&/^\d{4}-\d{2}-\d{2}$/.test(String(previewDate||'')))url.searchParams.set('date',previewDate);
     if(testerDate?.simulated===true&&/^\d{4}-\d{2}-\d{2}$/.test(String(testerDate.dateKey||''))){url.searchParams.set('date',testerDate.dateKey);url.searchParams.set('dw-safe-preview','1')}
     if(mod.id==='boss-battle'&&testerDate?.isTester===true&&testerDate?.testerUnlocks?.unlockBoss===true&&['localhost','127.0.0.1'].includes(pageUrl.hostname))url.searchParams.set('dw-local-boss-preview','1');
