@@ -69,7 +69,7 @@ Do not edit `main` directly. Promotion order:
 3. Show the changed-file list and gate result for explicit approval.
 4. Merge through the reviewed pull request.
 5. Verify GitHub Pages serves the `v57.1.7` academic/runtime/teacher cache keys.
-6. Publish the exact tested `firestore.rules` separately to Firebase project `dragonswood-home-not-configured`.
+6. Publish the exact tested `firestore.rules` separately to Firebase project `dragonswood-home`.
 7. Run controlled signed-in student/teacher production acceptance before final-grade use.
 
 Code rollback and rules rollback are separate. Revert the promotion commit through normal Git history and restore the immediately prior Firebase rules version. Do not force-reset shared `main`, delete reading evidence, or convert historical records.

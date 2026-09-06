@@ -43,11 +43,12 @@ const replacements=Object.freeze([
 ]);
 const textExtensions=new Set(['.cjs','.css','.html','.js','.json','.md','.mjs','.rules','.sh','.txt','.yaml','.yml']);
 const self='tools/configure-home-firebase.mjs';
+const exempt=new Set([self,'tools/home-isolation-audit.mjs']);
 const tracked=execFileSync('git',['ls-files','-z'],{encoding:'utf8'}).split('\0').filter(Boolean);
 const changed=[];
 
 for(const file of tracked){
-  if(file===self||!textExtensions.has(extname(file).toLowerCase()))continue;
+  if(exempt.has(file)||!textExtensions.has(extname(file).toLowerCase()))continue;
   let before;
   try{before=readFileSync(file,'utf8')}catch{continue}
   let after=before;

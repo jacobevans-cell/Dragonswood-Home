@@ -1,5 +1,5 @@
 const config=window.DRAGONSWOOD_HOME_FIREBASE_CONFIG||{};
-const configured=config.projectId&&config.projectId!=='dragonswood-home-not-configured'&&config.apiKey!=='HOME_FIREBASE_NOT_CONFIGURED';
+const configured=!!config.projectId&&!String(config.projectId).includes('not-configured')&&!!config.apiKey&&!String(config.apiKey).startsWith('HOME_FIREBASE_');
 const statusNode=document.querySelector('[data-parent-status]');
 const signInButton=document.querySelector('[data-parent-signin]');
 const signOutButton=document.querySelector('[data-parent-signout]');

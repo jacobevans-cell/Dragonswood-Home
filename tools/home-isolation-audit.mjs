@@ -25,7 +25,7 @@ for(const file of tracked){
 
 let aliases={};
 try{aliases=JSON.parse(readFileSync('.firebaserc','utf8')).projects||{}}catch{}
-if(!aliases.default||aliases.default==='dragonswood-home-not-configured')failures.push('.firebaserc: home Firebase project is not configured');
+if(!aliases.default||String(aliases.default).includes('not-configured'))failures.push('.firebaserc: home Firebase project is not configured');
 if(Object.values(aliases).some(value=>String(value).includes('dragonswood-9289e')))failures.push('.firebaserc: school Firebase project must never be a Home alias');
 
 if(failures.length){

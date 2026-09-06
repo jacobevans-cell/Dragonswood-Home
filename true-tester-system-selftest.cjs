@@ -19,7 +19,7 @@ const expectedCapabilities={
   selfAwardPoints:true
 };
 
-assert.equal(PROJECT_ID,'dragonswood-home-not-configured');
+assert.equal(PROJECT_ID,'dragonswood-home');
 assert.deepEqual(RECORDS.map(({uid,email,label,active,capabilities})=>({uid,email,label,active,capabilities})),[
   {uid:'S2hmoniITye8AGvnLBSt6NeiJYq2',email:'jacob.evans@explore.academy',label:'Jacob Evans Explore Tester',active:true,capabilities:expectedCapabilities},
   {uid:'LFy1nHGz5zbK0Xs0XSU2749zXxi1',email:'jacobicusjax@gmail.com',label:'Jacob Evans Teacher Tester',active:true,capabilities:expectedCapabilities}

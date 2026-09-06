@@ -1,4 +1,4 @@
-const PROD_CONFIG={apiKey:'HOME_FIREBASE_NOT_CONFIGURED',authDomain:'home-auth-not-configured.invalid',projectId:'dragonswood-home-not-configured',storageBucket:'home-storage-not-configured.invalid',messagingSenderId:'000000000001',appId:'1:000000000001:web:home-not-configured'};
+const PROD_CONFIG={apiKey:'AIzaSyD-qVZOZ3L3qgYItNfone4yEdouywF4BXU',authDomain:'dragonswood-home.firebaseapp.com',projectId:'dragonswood-home',storageBucket:'dragonswood-home.firebasestorage.app',messagingSenderId:'2486017303',appId:'1:2486017303:web:1bf3893e6b6d6b6530eb52'};
 const DEMO_CONFIG={apiKey:'demo-key',authDomain:'demo-dragonswood-v33.localhost',projectId:'demo-dragonswood-v33',storageBucket:'demo-dragonswood-v33.appspot.com',messagingSenderId:'000000000000',appId:'1:000000000000:web:demo-v33'};
 const cfg=window.DRAGONSWOOD_ARCADE_CONFIG||{};
 const params=new URLSearchParams(location.search);

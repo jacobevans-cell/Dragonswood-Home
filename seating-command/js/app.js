@@ -3,7 +3,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.1.0/firebas
 import { getAuth, onAuthStateChanged, connectAuthEmulator } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js';
 import { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, serverTimestamp, connectFirestoreEmulator } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
 
-const productionFirebaseConfig = { apiKey: 'HOME_FIREBASE_NOT_CONFIGURED', authDomain: 'home-auth-not-configured.invalid', projectId: 'dragonswood-home-not-configured', storageBucket: 'home-storage-not-configured.invalid', messagingSenderId: '000000000001', appId: '1:000000000001:web:home-not-configured' };
+const productionFirebaseConfig = { apiKey: 'AIzaSyD-qVZOZ3L3qgYItNfone4yEdouywF4BXU', authDomain: 'dragonswood-home.firebaseapp.com', projectId: 'dragonswood-home', storageBucket: 'dragonswood-home.firebasestorage.app', messagingSenderId: '2486017303', appId: '1:2486017303:web:1bf3893e6b6d6b6530eb52' };
 const emulatorFirebaseConfig = {apiKey:'demo-key',authDomain:'demo-dragonswood-v33.localhost',projectId:'demo-dragonswood-v33',storageBucket:'demo-dragonswood-v33.appspot.com',messagingSenderId:'000000000000',appId:'1:000000000000:web:demo-v33'};
 const TEACHER_EMAIL = 'jacobicusjax@gmail.com';
 const CLASSROOM_ID = 'evans-4-5';

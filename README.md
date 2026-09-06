@@ -6,10 +6,10 @@ project, account list, progress store, functions deployment, and website.
 
 ## Home setup status
 
-The source snapshot has been copied successfully. Automatic publishing is paused
-until the new Firebase Web app configuration is installed and the isolation audit
-passes. Do not enable GitHub Pages or deploy Firebase while `.firebaserc` contains
-`dragonswood-home-not-configured`.
+The source snapshot and the separate Dragonswood Home Firebase Web configuration
+are installed. Automatic publishing remains paused until Authentication,
+Firestore, and the visual-login Cloud Functions are enabled and verified. The
+isolation audit prevents this repository from pointing at the school project.
 
 After registering the new Firebase Web app, copy
 `config/home-firebase.example.json` outside the repository, fill in the Web app
